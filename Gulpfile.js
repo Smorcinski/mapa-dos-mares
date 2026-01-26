@@ -17,11 +17,11 @@ Update Javascript Files:
 var paths = {
     styles: {
         src: "./src/scss",
-        dest: "./www/css"
+        dest: "./docs/css"
     },
     scripts: {
         src: "./src/js",
-        dest: "./www/js",
+        dest: "./docs/js",
         webpackconffile: "./webpack.config.js"
     }
 };
