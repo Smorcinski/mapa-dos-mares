@@ -82,9 +82,9 @@ var map = L.map("mapid", {
     zoomControl: false
 
 
-}).setView([70, 70], 4);
-
+})
 keepRotationOnZoom(map);
+map.setView([70, 70], 4);
 
 
 L.control.zoom({ position: 'bottomright' }).addTo(map);
