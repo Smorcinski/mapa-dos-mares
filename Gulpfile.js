@@ -28,7 +28,7 @@ var paths = {
 
 
 var gulp = require('gulp'),
-	sass = require('gulp-sass'),
+	sass = require('gulp-sass')(require('sass')),
     sourcemaps = require('gulp-sourcemaps'),
 	//wait = require('gulp-wait'),
     //replace = require('gulp-replace'),
