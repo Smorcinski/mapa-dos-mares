@@ -45,7 +45,7 @@ var beacons = [
     },
     {
         "loc": [-156.431205, 187.968065], 
-        "title": "The Devil's Thirst"
+        "title": "The Devil's Thirst T"
     },
     
     
