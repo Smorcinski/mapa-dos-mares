@@ -274,6 +274,10 @@ function getXstring() {
     xm = window.encodeURIComponent(window.btoa(xm)); // encode a string
     return (xm);
 }
+function createManualCompass(latLng, angle, map) {
+    addComp(latLng, angle, map);
+}
+
 
 export {
     makeMarker,
@@ -283,5 +287,6 @@ export {
     addComp,
     clearXmarks,
     clearComp,
-    setQstring
+    setQstring,
+    createManualCompass   // ⬅️ ADICIONE ISSO
 };

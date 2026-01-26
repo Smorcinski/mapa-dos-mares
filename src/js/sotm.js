@@ -40,6 +40,9 @@ thrones.sort(compare);
 var isDev = false;
 
 var currentSearchIsland = -1;
+var compassDragStart = null;
+var compassDragging = false;
+
 
 
 //console.log("-- detect isOnline: " + isOnline);
@@ -106,6 +109,35 @@ function onMapClick(e) {
 
 map.on('click', onMapClick);
 
+map.on('mousedown', function(e) {
+    if (e.originalEvent.button === 2 && e.originalEvent.shiftKey) {
+        compassDragging = true;
+        compassDragStart = e.latlng;
+        map.dragging.disable();
+    }
+});
+
+map.on('mousemove', function(e) {
+    if (!compassDragging || !compassDragStart) return;
+
+    var deg = window.angle360(
+        compassDragStart.lat,
+        compassDragStart.lng,
+        e.latlng.lat,
+        e.latlng.lng
+    );
+
+    mF.clearComp(map);
+    mF.addComp(compassDragStart, deg, map);
+});
+
+map.on('mouseup', function(e) {
+    if (compassDragging) {
+        compassDragging = false;
+        compassDragStart = null;
+        map.dragging.enable();
+    }
+});
 
 
 
