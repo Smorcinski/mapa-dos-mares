@@ -227,12 +227,26 @@ function getMarker(markerData, mType) {
 
 function addComp(latLng, degs, map) {
     clearComp(map);
-    compMark = L.marker(latLng, {icon: boatMarker, draggable: false}).addTo(map);
-    //console.log(compMark._icon.style);
-    var newStyle = compMark._icon.style.transform + " rotate(" + degs + "deg)";
-    //console.log(newStyle);
-    compMark._icon.style.transform = newStyle;
+
+    compMark = L.marker(latLng, {
+        icon: boatMarker,
+        draggable: false
+    }).addTo(map);
+
+    compMark._angle = degs; // guarda o ângulo
+
+    applyRotation(compMark);
+
     xMarkers.push(compMark);
+}
+
+function applyRotation(marker) {
+    if (!marker || !marker._icon) return;
+
+    const icon = marker._icon;
+    icon.style.transformOrigin = "50% 50%";
+    icon.style.transform = icon.style.transform.replace(/rotate\(.*?deg\)/, "");
+    icon.style.transform += " rotate(" + marker._angle + "deg)";
 }
 
 function clearComp(map) {
@@ -275,6 +289,15 @@ function getXstring() {
     return (xm);
 }
 
+function keepRotationOnZoom(map) {
+    map.on('zoomend', function () {
+        if (compMark) {
+            applyRotation(compMark);
+        }
+    });
+}
+
+
 export {
     makeMarker,
     getMarker,
@@ -283,5 +306,6 @@ export {
     addComp,
     clearXmarks,
     clearComp,
+	keepRotationOnZoom,
     setQstring
 };

@@ -87,6 +87,8 @@ var map = L.map("mapid", {
 
 L.control.zoom({ position: 'bottomright' }).addTo(map);
 
+mF.keepRotationOnZoom(map);
+
 var height = 25522;
 var width = 27444;
 var bounds = new L.LatLngBounds(map.unproject([0, height], 7), map.unproject([width, 0], 7));
