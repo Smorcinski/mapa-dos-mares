@@ -1,6 +1,6 @@
 var islands = [{
 		"loc": [-41.819753270587555, 62.927539082707604],
-        "title": "Lone Cove",
+        "title": "Enseada Solitária",
 		"coords" : "H 6",
 		"img" : "loneCove.jpg",
         radius: 3,
@@ -9,7 +9,7 @@ var islands = [{
     },
     {
         "loc": [-69.94175507751075, 50.54955884969927],
-        "title": "Cannon Cove",
+        "title": "Enseada do Canhão",
 		"coords" : "G 10",
 		"img" : "cannonCove.jpg",
         radius: 4,
@@ -18,14 +18,14 @@ var islands = [{
     },
     {
         "loc": [-67.62877065330183, 65.30062001780092],
-        "title": "Rum Runner Isle",
+        "title": "Ilha do Contrabandista de Rum",
 		"coords" : "H 9",
         radius: 2,
         pigs: true
     },
     {
         "loc": [-80.94564356372827, 121.30273506665486],
-        "title": "The Crooked Masts",
+        "title": "Os Mastros Retorcidos",
 		"coords" : "O 11",
         radius: 3,
         chickens: true,
@@ -33,7 +33,7 @@ var islands = [{
     },
     {
         "loc": [-29.006074941430732, 18.117840198163094],
-        "title": "Sailor's Bounty",
+        "title": "Recompensa do Marinheiro",
 		"coords" : "C 4",
 		"img" : "sailorsBounty.jpg",
         radius: 4,
@@ -42,7 +42,7 @@ var islands = [{
     },
     {
         "loc": [-21.065393452707312, 42.86583042922642],
-        "title": "Smuggler's Bay",
+        "title": "Baía do Contrabandista",
 		"coords" : "F 3",
 		"img" : "smugglersBay.jpg",
         radius: 4,
@@ -51,7 +51,7 @@ var islands = [{
     },
     {
         "loc": [-22.940799321639105, 57.487891142156535],
-        "title": "Salty Sands",
+        "title": "Areias Salgadas",
 		"coords" : "G 3",
 		"img" : "saltySands.jpg",
         radius: 1.5,
@@ -59,7 +59,7 @@ var islands = [{
     },
     {
         "loc": [-28.629490743342114, 69.55120761078706],
-        "title": "Picaroon Palms",
+        "title": "Palmeiras dos Piratas",
 		"coords" : "I 4",
 		"img" : "picaroonPalms.jpg",
         radius: 1.5,
@@ -67,14 +67,14 @@ var islands = [{
     },
     {
         "loc": [-28.19171579987219, 88.62081716840055],
-        "title": "Scurvy Isley",
+        "title": "Ilhota do Escorbuto",
 		"coords" : "K 4",
 		"img" : "scurveyIsley.jpg",
         radius: 1.5
     },
     {
         "loc": [-28.691820540241682, 107.0555642878491],
-        "title": "Old Faithful Isle",
+        "title": "Ilha da Antiga Fé",
 		"coords" : "M 4",
 		"img" : "oldFaithfulIsle.jpg",
         radius: 4,
@@ -83,14 +83,14 @@ var islands = [{
     },
     {
         "loc": [-22.8781029334463, 120.48941102991489],
-        "title": "Black Sand Atoll",
+        "title": "Atol da Areia Negra",
 		"coords" : "O 3",
         radius: 1.5,
         snakes: true
     },
     {
         "loc": [-21.566440856402263, 136.5557290968507],
-        "title": "Marauder's Arch",
+        "title": "Arco do Saqueador",
 		"coords" : "Q 3",
         radius: 3,
         chickens: true,
@@ -98,7 +98,7 @@ var islands = [{
     },
     {
         "loc": [-32.44278938865952, 32.80535275921895],
-        "title": "Sandy Shallows",
+        "title": "Baixios Arenosos",
 		"coords" : "D 5",
 		"img" : "sandyShallows.jpg",
         radius: 1.5,
@@ -106,7 +106,7 @@ var islands = [{
     },
     {
         "loc": [-33.44299886939851, 50.23934822463562], 
-        "title": "Boulder Cay",
+        "title": "Ilhota das Rochas",
 		"coords" : "G 5",
 		"img" : "boulderCay.jpg",
         radius: 1.5,
@@ -114,7 +114,7 @@ var islands = [{
     },
     {
         "loc": [-45.00792099044309, 24.432035940703415],
-        "title": "Keel Haul Fort",
+        "title": "Forte da Quilha Partida",
 		"coords" : "C 6",
 		"img" : "keelHaulFort.jpg",
         radius: 2,
