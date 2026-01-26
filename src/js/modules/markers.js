@@ -223,40 +223,17 @@ function getMarker(markerData, mType) {
 }
 
 
-function applyRotation(marker) {
-    if (!marker || !marker._icon) return;
-
-    const icon = marker._icon;
-
-    // Garante rotação no centro
-    icon.style.transformOrigin = "50% 50%";
-
-    // Remove qualquer rotação antiga antes de aplicar a nova
-    icon.style.transform = icon.style.transform.replace(/rotate\(.*?deg\)/, "");
-
-    // Aplica novamente o ângulo salvo
-    icon.style.transform += " rotate(" + marker._angle + "deg)";
-}
 
 
 function addComp(latLng, degs, map) {
     clearComp(map);
-
-    compMark = L.marker(latLng, {
-        icon: boatMarker,
-        draggable: false
-    }).addTo(map);
-
-    // Salva o ângulo atual
-    compMark._angle = degs;
-
-    // Aplica a rotação corretamente
-    applyRotation(compMark);
-
+    compMark = L.marker(latLng, {icon: boatMarker, draggable: false}).addTo(map);
+    //console.log(compMark._icon.style);
+    var newStyle = compMark._icon.style.transform + " rotate(" + degs + "deg)";
+    //console.log(newStyle);
+    compMark._icon.style.transform = newStyle;
     xMarkers.push(compMark);
 }
-
-
 
 function clearComp(map) {
     if(compMark) {
@@ -297,18 +274,6 @@ function getXstring() {
     xm = window.encodeURIComponent(window.btoa(xm)); // encode a string
     return (xm);
 }
-function createManualCompass(latLng, angle, map) {
-    addComp(latLng, angle, map);
-}
-
-function keepRotationOnZoom(map) {
-    map.on('zoomend', function () {
-        if (compMark) {
-            applyRotation(compMark);
-        }
-    });
-}
-
 
 export {
     makeMarker,
@@ -318,7 +283,5 @@ export {
     addComp,
     clearXmarks,
     clearComp,
-    setQstring,
-    createManualCompass,
-	keepRotationOnZoom
+    setQstring
 };
