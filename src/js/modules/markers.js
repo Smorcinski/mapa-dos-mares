@@ -227,13 +227,23 @@ function getMarker(markerData, mType) {
 
 function addComp(latLng, degs, map) {
     clearComp(map);
-    compMark = L.marker(latLng, {icon: boatMarker, draggable: false}).addTo(map);
-    //console.log(compMark._icon.style);
-    var newStyle = compMark._icon.style.transform + " rotate(" + degs + "deg)";
-    //console.log(newStyle);
-    compMark._icon.style.transform = newStyle;
+
+    compMark = L.marker(latLng, {
+        icon: boatMarker,
+        draggable: false
+    }).addTo(map);
+
+    const icon = compMark._icon;
+
+    // Garante que o eixo de rotação fique no centro do ícone
+    icon.style.transformOrigin = "50% 50%";
+
+    // Mantém o translate original do Leaflet e adiciona apenas a rotação
+    icon.style.transform += " rotate(" + degs + "deg)";
+
     xMarkers.push(compMark);
 }
+
 
 function clearComp(map) {
     if(compMark) {
