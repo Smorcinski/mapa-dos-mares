@@ -223,6 +223,20 @@ function getMarker(markerData, mType) {
 }
 
 
+function applyRotation(marker) {
+    if (!marker || !marker._icon) return;
+
+    const icon = marker._icon;
+
+    // Garante rotação no centro
+    icon.style.transformOrigin = "50% 50%";
+
+    // Remove qualquer rotação antiga antes de aplicar a nova
+    icon.style.transform = icon.style.transform.replace(/rotate\(.*?deg\)/, "");
+
+    // Aplica novamente o ângulo salvo
+    icon.style.transform += " rotate(" + marker._angle + "deg)";
+}
 
 
 function addComp(latLng, degs, map) {
@@ -233,16 +247,15 @@ function addComp(latLng, degs, map) {
         draggable: false
     }).addTo(map);
 
-    const icon = compMark._icon;
+    // Salva o ângulo atual
+    compMark._angle = degs;
 
-    // Garante que o eixo de rotação fique no centro do ícone
-    icon.style.transformOrigin = "50% 50%";
-
-    // Mantém o translate original do Leaflet e adiciona apenas a rotação
-    icon.style.transform += " rotate(" + degs + "deg)";
+    // Aplica a rotação corretamente
+    applyRotation(compMark);
 
     xMarkers.push(compMark);
 }
+
 
 
 function clearComp(map) {
@@ -288,6 +301,14 @@ function createManualCompass(latLng, angle, map) {
     addComp(latLng, angle, map);
 }
 
+function keepRotationOnZoom(map) {
+    map.on('zoomend', function () {
+        if (compMark) {
+            applyRotation(compMark);
+        }
+    });
+}
+
 
 export {
     makeMarker,
@@ -298,5 +319,6 @@ export {
     clearXmarks,
     clearComp,
     setQstring,
-    createManualCompass   // ⬅️ ADICIONE ISSO
+    createManualCompass
+	keepRotationOnZoom
 };
