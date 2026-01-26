@@ -80,9 +80,11 @@ var map = L.map("mapid", {
     preferCanvas: false,
     maxBoundsViscosity: 1,
     zoomControl: false
-	keepRotationOnZoom(map);
+
 
 }).setView([70, 70], 4);
+
+keepRotationOnZoom(map);
 
 
 L.control.zoom({ position: 'bottomright' }).addTo(map);

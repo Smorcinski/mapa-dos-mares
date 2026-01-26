@@ -319,6 +319,6 @@ export {
     clearXmarks,
     clearComp,
     setQstring,
-    createManualCompass
+    createManualCompass,
 	keepRotationOnZoom
 };
