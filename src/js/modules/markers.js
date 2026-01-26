@@ -5,55 +5,55 @@ var compMark;
 
 var markerIcons = {
     "throne_L" : {
-        iconUrl: '/images/markers/throne_marker_l.png',
+        iconUrl: 'images/markers/throne_marker_l.png',
         iconSize:     [31, 40],
         iconAnchor:   [15, 40],
         popupAnchor:  [0, -40] 
     },
 
     "throne_S" : {
-        iconUrl: '/images/markers/throne_marker_s.png',
+        iconUrl: 'images/markers/throne_marker_s.png',
         iconSize:     [31, 40],
         iconAnchor:   [15, 40],
         popupAnchor:  [0, -40]
     },
 
     "cargorun" : {
-        iconUrl: '/images/markers/crate_marker.png',
+        iconUrl: 'images/markers/crate_marker.png',
         iconSize:     [31, 40], 
         iconAnchor:   [15, 40], 
         popupAnchor:  [0, -45] 
     },
 
     "beacon" : {
-        iconUrl: '/images/markers/beacon_marker.png', 
+        iconUrl: 'images/markers/beacon_marker.png', 
         iconSize:     [31, 40], 
         iconAnchor:   [15, 40],
         popupAnchor:  [0, -45] 
     },
 
     "talltale" : {
-        iconUrl: '/images/markers/tt_marker.png', 
+        iconUrl: 'images/markers/tt_marker.png', 
         iconSize:     [31, 40], 
         iconAnchor:   [15, 40],
         popupAnchor:  [0, -45] 
     },
 
     "compass" : {
-        iconUrl: '/images/markers/compass.png',   
+        iconUrl: 'images/markers/compass.png',   
         iconSize:     [50, 48], 
         iconAnchor:   [25, 24]
     },
 
     "boat" : {
-        iconUrl: '/images/markers/boat_marker.png',
+        iconUrl: 'images/markers/boat_marker.png',
         iconSize:     [50, 59], 
         shadowSize:   [0, 0], 
         iconAnchor:   [25, 29]
     },
 
     "xmarksspot" : {
-        iconUrl: '/images/markers/xmarkthespot_marker.png',
+        iconUrl: 'images/markers/xmarkthespot_marker.png',
         iconSize:     [40, 52], 
         iconAnchor:   [20, 52]
     }
@@ -64,24 +64,24 @@ var markerIcons = {
 
 /*
 var throne_L_icon = L.icon({
-    iconUrl: '/images/markers/throne_marker_l.png',
-    shadowUrl: '/images/markers/throne_marker_l.png',
+    iconUrl: 'images/markers/throne_marker_l.png',
+    shadowUrl: 'images/markers/throne_marker_l.png',
     iconSize:     [31, 40],// size of the icon
     iconAnchor:   [15, 40], // point of the icon which will correspond to marker's location
     popupAnchor:  [0, -40] // point from which the popup should open relative to the iconAnchor
 });
 
 var throne_S_icon = L.icon({
-    iconUrl: '/images/markers/throne_marker_s.png',
-    shadowUrl: '/images/markers/throne_marker_s.png',
+    iconUrl: 'images/markers/throne_marker_s.png',
+    shadowUrl: 'images/markers/throne_marker_s.png',
     iconSize:     [31, 40],// size of the icon
     iconAnchor:   [15, 40], // point of the icon which will correspond to marker's location
     popupAnchor:  [0, -40] // point from which the popup should open relative to the iconAnchor
 });
 
 var cargorun_icon = L.icon({
-    iconUrl: '/images/markers/crate_marker.png',
-    shadowUrl: '/images/markers/crate_marker.png',
+    iconUrl: 'images/markers/crate_marker.png',
+    shadowUrl: 'images/markers/crate_marker.png',
 
     iconSize:     [31, 40], // size of the icon
     shadowSize:   [0, 0], // size of the shadow
@@ -93,8 +93,8 @@ var cargorun_icon = L.icon({
 
 
 var beacon_icon = L.icon({
-    iconUrl: '/images/markers/beacon_marker.png',
-    shadowUrl: '/images/markers/beacon_marker.png',
+    iconUrl: 'images/markers/beacon_marker.png',
+    shadowUrl: 'images/markers/beacon_marker.png',
 
     iconSize:     [31, 40], // size of the icon
     shadowSize:   [0, 0], // size of the shadow
@@ -104,8 +104,8 @@ var beacon_icon = L.icon({
 });
 
 var compass_marker = L.icon({
-    iconUrl: '/images/markers/compass.png',
-    shadowUrl: '/images/markers/compass.png',
+    iconUrl: 'images/markers/compass.png',
+    shadowUrl: 'images/markers/compass.png',
     
     iconSize:     [50, 48], // size of the icon
     shadowSize:   [0, 0], // size of the shadow
@@ -117,8 +117,8 @@ var compass_marker = L.icon({
 
 
 var boatMarker = L.icon({
-    iconUrl: '/images/markers/boat_marker.png',
-    shadowUrl: '/images/markers/boat_marker.png',
+    iconUrl: 'images/markers/boat_marker.png',
+    shadowUrl: 'images/markers/boat_marker.png',
     
     iconSize:     [50, 59], // size of the icon
     shadowSize:   [0, 0], // size of the shadow
@@ -129,8 +129,8 @@ var boatMarker = L.icon({
 
 
 var xmarksspot = L.icon({
-    iconUrl: '/images/markers/xmarkthespot_marker.png',
-    shadowUrl: '/images/markers/xmarkthespot_marker.png',
+    iconUrl: 'images/markers/xmarkthespot_marker.png',
+    shadowUrl: 'images/markers/xmarkthespot_marker.png',
     
     iconSize:     [40, 52], // size of the icon
     shadowSize:   [0, 0], // size of the shadow
@@ -142,15 +142,15 @@ var xmarksspot = L.icon({
 
 
 var boatMarker = L.icon({
-    iconUrl: '/images/markers/boat_marker.png',
+    iconUrl: 'images/markers/boat_marker.png',
     iconSize:     [50, 59], // size of the icon
     iconAnchor:   [25, 29]
 });
 
 
 var xmarksspot = L.icon({
-    iconUrl: '/images/markers/xmarkthespot_marker.png',
-    shadowUrl: '/images/markers/xmarkthespot_marker.png',
+    iconUrl: 'images/markers/xmarkthespot_marker.png',
+    shadowUrl: 'images/markers/xmarkthespot_marker.png',
     
     iconSize:     [40, 52], // size of the icon
     shadowSize:   [0, 0], // size of the shadow
