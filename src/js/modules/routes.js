@@ -4,10 +4,11 @@ let drawingRoute = false;
 let currentRoute = null;
 let routeId = 1;
 
-const DOT_SPACING = 10; // px → bolinha, 10px, bolinha
-const PX_PER_QUADRANT = 512;
-const KM_PER_QUADRANT = 25;
-const DAYS_PER_QUADRANT = 3;
+const DOT_SPACING = 1; // px → bolinha, 10px, bolinha
+const UNITS_PER_QUADRANT = 20;
+const KM_PER_UNIT = 1.25;
+const DAYS_PER_UNIT = 0.15;
+
 
 const MAX_ROUTES = 3;
 
@@ -134,11 +135,13 @@ function getNextRouteColor() {
 
 function finalizeRoute(route) {
 
-    const quadrants = route.totalDistance / PX_PER_QUADRANT;
+    const units = route.totalDistance;
 
-    route.km = (quadrants * KM_PER_QUADRANT).toFixed(1);
-    route.days = (quadrants * DAYS_PER_QUADRANT).toFixed(1);
+    route.km = (units * KM_PER_UNIT).toFixed(1);
+    route.days = (units * DAYS_PER_UNIT).toFixed(1);
 }
+
+
 
 function updateRoutesPanel() {
 
