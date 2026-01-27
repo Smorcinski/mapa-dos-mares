@@ -4,7 +4,7 @@ let drawingRoute = false;
 let currentRoute = null;
 let routeId = 1;
 
-const ROUTE_POINT_DISTANCE = 15; // bolinha ~5px + espaço ~10px
+const DOT_SPACING = 10; // px → bolinha, 10px, bolinha
 const PX_PER_QUADRANT = 512;
 const KM_PER_QUADRANT = 25;
 const DAYS_PER_QUADRANT = 3;
@@ -20,15 +20,16 @@ function distance(a, b) {
 
 function createRouteDot(latLng, map, color) {
     return L.circleMarker(latLng, {
-        radius: 8,               // 15% maior que o rastro do navio
+        radius: 5,
         color: color,
         fillColor: color,
         fillOpacity: 0.7,
         weight: 0,
         interactive: false,
-        pane: "shadowPane"       // sempre abaixo dos navios
+        pane: "shadowPane"
     }).addTo(map);
 }
+
 function startRouteDrawing(map) {
 
     if (routes.length >= MAX_ROUTES) {
@@ -42,64 +43,73 @@ function startRouteDrawing(map) {
     map.dragging.disable();
 }
 
-
 function stopRouteDrawing(map) {
 
-    if (!drawingRoute) return;
+    if (!drawingRoute || !currentRoute) return;
 
     drawingRoute = false;
+    waitingForRouteStart = false;
     map.dragging.enable();
 
     finalizeRoute(currentRoute);
 
-    routes.push(currentRoute);
+    routes.unshift(currentRoute);
     currentRoute = null;
+
+    updateRoutesPanel();
+    checkRouteLimit();
 }
+
 function attachRouteDrawingEvents(map) {
 
-    let lastMousePoint = null;
-    let lastDotPoint = null;
+    let lastPoint = null;
+    let dotAccumulator = 0;
 
-    map.on('mousedown', function (e) {
+    map.on('mousedown', e => {
 
-        if (!drawingRoute) return;
+        if (!waitingForRouteStart || e.originalEvent.button !== 0) return;
 
-        currentRoute.points = [];
-        currentRoute.totalDistance = 0;
+        drawingRoute = true;
+        waitingForRouteStart = false;
 
-        lastMousePoint = e.latlng;
-        lastDotPoint = e.latlng;
+        currentRoute = {
+            id: routeId++,
+            color: getNextRouteColor(),
+            dots: [],
+            totalDistance: 0
+        };
 
-        currentRoute.points.push(e.latlng);
+        lastPoint = e.latlng;
+        dotAccumulator = 0;
 
+        currentRoute.dots.push(
+            createRouteDot(e.latlng, map, currentRoute.color)
+        );
     });
 
-    map.on('mousemove', function (e) {
+    map.on('mousemove', e => {
 
-        if (!drawingRoute || !currentRoute || !lastMousePoint) return;
+        if (!drawingRoute || !lastPoint) return;
 
-        const realDist = distance(lastMousePoint, e.latlng);
-        currentRoute.totalDistance += realDist;
+        const step = distance(lastPoint, e.latlng);
+        currentRoute.totalDistance += step;
+        dotAccumulator += step;
 
-        const dotDist = distance(lastDotPoint, e.latlng);
-
-        if (dotDist >= ROUTE_POINT_DISTANCE) {
-            const dot = createRouteDot(e.latlng, map, currentRoute.color);
-            currentRoute.dots.push(dot);
-            lastDotPoint = e.latlng;
+        if (dotAccumulator >= DOT_SPACING) {
+            currentRoute.dots.push(
+                createRouteDot(e.latlng, map, currentRoute.color)
+            );
+            dotAccumulator = 0;
         }
 
-        currentRoute.points.push(e.latlng);
-        lastMousePoint = e.latlng;
+        lastPoint = e.latlng;
     });
 
-    map.on('mouseup', function () {
+    map.on('mouseup', () => {
 
         if (!drawingRoute) return;
 
-        lastMousePoint = null;
-        lastDotPoint = null;
-
+        lastPoint = null;
         stopRouteDrawing(map);
     });
 
@@ -109,11 +119,11 @@ function attachRouteDrawingEvents(map) {
 let routeColorIndex = 0;
 
 const routeColors = [
-    "#f5c542", // dourado
-    "#2ecc71", // verde
-    "#e67e22", // laranja
-    "#9b59b6", // roxo
-    "#3498db"  // azul
+    "#f5c542",
+    "#2ecc71",
+    "#e67e22",
+    "#9b59b6",
+    "#3498db"
 ];
 
 function getNextRouteColor() {
@@ -121,18 +131,15 @@ function getNextRouteColor() {
     routeColorIndex++;
     return c;
 }
+
 function finalizeRoute(route) {
 
     const quadrants = route.totalDistance / PX_PER_QUADRANT;
 
-    const km = quadrants * KM_PER_QUADRANT;
-    const days = quadrants * DAYS_PER_QUADRANT;
-
-    route.km = km.toFixed(1);
-    route.days = days.toFixed(1);
-
-    updateRoutesPanel();
+    route.km = (quadrants * KM_PER_QUADRANT).toFixed(1);
+    route.days = (quadrants * DAYS_PER_QUADRANT).toFixed(1);
 }
+
 function updateRoutesPanel() {
 
     const panel = document.getElementById("routes-panel");
@@ -160,6 +167,7 @@ function updateRoutesPanel() {
         panel.appendChild(div);
     });
 }
+
 function deleteRoute(id) {
 
     const index = routes.findIndex(r => r.id === id);
@@ -170,31 +178,11 @@ function deleteRoute(id) {
     routes.splice(index, 1);
 
     updateRoutesPanel();
-	checkRouteLimit();
-
+    checkRouteLimit();
 }
 
-
-
-function onRouteMouseMove(e) {
-    if (!drawingRoute) return;
-
-    addRoutePoint(e.latlng);
-}
-
-function addRoutePoint(latlng) {
-    const marker = L.circleMarker(latlng, {
-        radius: 6,
-        color: "#f5c542",
-        fillColor: "#f5c542",
-        fillOpacity: 0.7,
-        weight: 1
-    }).addTo(map);
-
-    currentRoute.markers.push(marker);
-    currentRoute.points.push(latlng);
-}
 function checkRouteLimit() {
+
     const btn = document.getElementById("add-route-btn");
     if (!btn) return;
 
