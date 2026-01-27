@@ -502,6 +502,50 @@ aside.sidebar {
         }
 
     }
+	    // ================================
+    // ROTAS — PAINEL DE CONTROLE
+    // ================================
+
+    #routes-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 6px 8px;
+    }
+
+    .route-block {
+        background: rgba(0, 0, 0, 0.35);
+        border-radius: 6px;
+        padding: 6px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        font-size: 11px;
+        color: white;
+        border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    .route-title {
+        font-weight: bold;
+        font-size: 12px;
+    }
+
+    .route-info {
+        opacity: 0.8;
+    }
+
+    .route-delete {
+        align-self: flex-end;
+        background: none;
+        border: none;
+        color: #ff6666;
+        cursor: pointer;
+        font-size: 13px;
+    }
+
+    .route-delete:hover {
+        color: red;
+    }
 
 
 }
