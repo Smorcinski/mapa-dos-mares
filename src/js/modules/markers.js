@@ -407,7 +407,7 @@ function updateShipTrail(ship, latlng, map) {
     if (!ship._trail) ship._trail = [];
     if (!ship._lastTrailPos) ship._lastTrailPos = latlng;
 
-    const minDist = 3; // controle do espaçamento entre bolinhas
+    const minDist = 2; // controle do espaçamento entre bolinhas
 
     if (distance(ship._lastTrailPos, latlng) < minDist) return;
 

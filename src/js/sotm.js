@@ -7,8 +7,9 @@ import * as places_data from './modules/places_data.js';
 import * as tools from './modules/tools.js';
 import * as data_out from './modules/data_output.js';
 import * as mF from './modules/markers.js';
-
 import * as pList from './modules/place_list.js';
+import * as routes from './modules/routes.js';
+
 
 var layerArray = [];
 
@@ -84,6 +85,7 @@ var map = L.map("mapid", {
 
 }).setView([70, 70], 4);
 
+routes.attachRouteDrawingEvents(map);
 
 L.control.zoom({ position: 'bottomright' }).addTo(map);
 
@@ -756,6 +758,11 @@ function adjustIslandsAnchorPointOnZoom(anchorXmodifier){
 
 var popUpInt = 0;
 $(function() {
+	
+	document.getElementById("add-route-btn").onclick = () => {
+		routes.startRouteDrawing(map);
+	};
+
 
     pList.buildPlaceList();
 
