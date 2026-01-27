@@ -636,6 +636,10 @@ map.on('contextmenu', function(e) {
 		map.closePopup();
 	});
 
+	$(".js-addEnemy").click(function(){
+		mF.addEnemyFromContext({ latlng: myLoc }, map);
+		map.closePopup();
+	});
 
     
 

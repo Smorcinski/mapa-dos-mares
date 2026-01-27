@@ -139,6 +139,33 @@ var xmarksspot = L.icon({
     popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
 });
 */
+function createShip(latLng, map, angle = 0, isEnemy = false) {
+
+    const ship = L.marker(latLng, {
+        icon: boatMarker,
+        draggable: false
+    }).addTo(map);
+
+    ship._angle = angle;
+    ship._isEnemy = isEnemy;
+
+    if (isEnemy) {
+        ship._icon.classList.add("enemy-ship");
+    }
+
+    applyRotation(ship);
+    enableShipControls(ship, map);
+
+    ships.push(ship);
+
+    return ship;
+}
+
+function addEnemyFromContext(e, map) {
+    createShip(e.latlng, map, 0, true);
+}
+
+
 
 
 var boatMarker = L.icon({
@@ -294,9 +321,8 @@ function applyRotation(marker) {
 }
 
 function clearComp(map) {
-    if(compMark) {
-        map.removeLayer(compMark);
-    }
+    ships.forEach(ship => map.removeLayer(ship));
+    ships = [];
 }
 
 function addXmark(latLng, map) {
@@ -355,5 +381,5 @@ export {
 	keepRotationOnZoom,
     setQstring,
 	addShipFromContext,
-
+	addEnemyFromContext
 };
