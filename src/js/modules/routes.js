@@ -4,7 +4,7 @@ let drawingRoute = false;
 let currentRoute = null;
 let routeId = 1;
 
-const ROUTE_POINT_DISTANCE = 20; // antes era 40 → agora mais suave
+const ROUTE_POINT_DISTANCE = 15; // bolinha ~5px + espaço ~10px
 const PX_PER_QUADRANT = 512;
 const KM_PER_QUADRANT = 25;
 const DAYS_PER_QUADRANT = 3;
@@ -57,62 +57,54 @@ function stopRouteDrawing(map) {
 }
 function attachRouteDrawingEvents(map) {
 
-    let lastPoint = null;
+    let lastMousePoint = null;
+    let lastDotPoint = null;
 
     map.on('mousedown', function (e) {
 
-        if (!waitingForRouteStart) return;
+        if (!drawingRoute) return;
 
-        waitingForRouteStart = false;
-        drawingRoute = true;
+        currentRoute.points = [];
+        currentRoute.totalDistance = 0;
 
-        currentRoute = {
-            id: routeId++,
-            dots: [],
-            points: [],
-            totalDistance: 0,
-            color: getNextRouteColor()
-        };
+        lastMousePoint = e.latlng;
+        lastDotPoint = e.latlng;
 
-        lastPoint = e.latlng;
-        currentRoute.points.push(lastPoint);
+        currentRoute.points.push(e.latlng);
+
     });
 
     map.on('mousemove', function (e) {
 
-        if (!drawingRoute || !currentRoute) return;
+        if (!drawingRoute || !currentRoute || !lastMousePoint) return;
 
-        const dist = distance(lastPoint, e.latlng);
+        const realDist = distance(lastMousePoint, e.latlng);
+        currentRoute.totalDistance += realDist;
 
-        if (dist < ROUTE_POINT_DISTANCE) return;
+        const dotDist = distance(lastDotPoint, e.latlng);
 
-        const dot = createRouteDot(e.latlng, map, currentRoute.color);
+        if (dotDist >= ROUTE_POINT_DISTANCE) {
+            const dot = createRouteDot(e.latlng, map, currentRoute.color);
+            currentRoute.dots.push(dot);
+            lastDotPoint = e.latlng;
+        }
 
-        currentRoute.dots.push(dot);
         currentRoute.points.push(e.latlng);
-
-        currentRoute.totalDistance += dist;
-
-        lastPoint = e.latlng;
+        lastMousePoint = e.latlng;
     });
 
     map.on('mouseup', function () {
 
         if (!drawingRoute) return;
 
-        drawingRoute = false;
-        map.dragging.enable();
+        lastMousePoint = null;
+        lastDotPoint = null;
 
-        finalizeRoute(currentRoute);
-        routes.push(currentRoute);
-
-        currentRoute = null;
-        lastPoint = null;
-
-        updateRoutesPanel();
-        checkRouteLimit();
+        stopRouteDrawing(map);
     });
+
 }
+
 
 let routeColorIndex = 0;
 
