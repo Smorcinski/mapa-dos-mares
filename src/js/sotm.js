@@ -607,13 +607,14 @@ map.on('contextmenu', function(e) {
     var myLoc = e.latlng;
     popup
         .setLatLng(e.latlng)
-        .setContent("<ul><li class='js-addMarker'>Add Marker</li>\
-        <li class='js-clearMarkers'>Clear Markers</li>\
-        <li class='js-closest' data-type='chickens'>Closest Chickens</li>\
-        <li class='js-closest' data-type='pigs'>Closest Pigs</li>\
-        <li class='js-closest' data-type='snakes'>Closest Snakes</li>\
-        <li class='js-closest' data-type='outpost'>Closest Outpost</li>\
-        </ul>")
+        .setContent(`
+		<ul>
+			<li class='js-addMarker'>Adicionar Marcador</li>
+			<li class='js-addShip'>Adicionar Navio</li>
+			<li class='js-addEnemy'>Adicionar Inimigo</li>
+			<li class='js-clearMarkers'>Limpar Marcadores</li>
+		</ul>
+`)
         .openOn(map);
 
     $(".js-addMarker").click(function() {
@@ -629,22 +630,13 @@ map.on('contextmenu', function(e) {
         mF.setQstring();
         map.closePopup();
     });
+	
+	$(".js-addShip").click(function(){
+		mF.addShipFromContext({ latlng: myLoc }, map);
+		map.closePopup();
+	});
 
-    $(".js-closest").click(function() {
-        var type = $(this).data("type");
-        var found = findNearestMarker(e.latlng, type);
-        var mkr = found.islandData;
 
-        $(".islandClass").removeClass("show pigs chickens snakes outposts");
-        mkr.circle._path.classList.add(type, "show");
-
-        var CapType = type.charAt(0).toUpperCase() + type.slice(1);
-        var words = "<span class='type'>" + CapType + "</span> can be found to the <span class='direction'>" + window.getCardinalFromDeg(found.bearing) + "</span> at <span class='title'>" + found.title + "</span>";
-
-        mF.addComp(myLoc, found.bearing, map); //add compass at click point
-        showPopup(words);
-        map.closePopup();
-    });
     
 
 });

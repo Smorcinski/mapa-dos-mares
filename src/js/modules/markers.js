@@ -1,6 +1,6 @@
 
 var xMarkers = [];
-var compMark;
+var ships = [];
 
 
 var markerIcons = {
@@ -160,6 +160,60 @@ var xmarksspot = L.icon({
 });
 
 
+function enableShipControls(ship, map) {
+
+    let dragging = false;
+    let rotating = false;
+
+    ship.on('mousedown', function(e) {
+        if (e.originalEvent.button === 0) {
+            dragging = true;
+            map.dragging.disable();
+        }
+    });
+
+    ship.on('contextmenu', function(e) {
+        e.originalEvent.preventDefault();
+        rotating = true;
+        map.dragging.disable();
+    });
+
+    map.on('mousemove', function(e) {
+
+        if (dragging) {
+            const from = ship.getLatLng();
+            const to = e.latlng;
+
+            ship.setLatLng(to);
+
+            const angle = calculateAngle(from, to);
+            ship._angle = angle;
+            applyRotation(ship);
+        }
+
+        if (rotating) {
+            const center = ship.getLatLng();
+            const angle = calculateAngle(center, e.latlng);
+            ship._angle = angle;
+            applyRotation(ship);
+        }
+
+    });
+
+    map.on('mouseup', function() {
+        dragging = false;
+        rotating = false;
+        map.dragging.enable();
+    });
+}
+
+function calculateAngle(from, to) {
+    const dx = to.lng - from.lng;
+    const dy = to.lat - from.lat;
+
+    const rad = Math.atan2(dx, dy);
+    return rad * 180 / Math.PI;
+}
 
 
 //NOT USED?
@@ -226,19 +280,9 @@ function getMarker(markerData, mType) {
 
 
 function addComp(latLng, degs, map) {
-    clearComp(map);
-
-    compMark = L.marker(latLng, {
-        icon: boatMarker,
-        draggable: false
-    }).addTo(map);
-
-    compMark._angle = degs; // guarda o ângulo
-
-    applyRotation(compMark);
-
-    xMarkers.push(compMark);
+    return createShip(latLng, map, degs);
 }
+
 
 function applyRotation(marker) {
     if (!marker || !marker._icon) return;
@@ -291,10 +335,12 @@ function getXstring() {
 
 function keepRotationOnZoom(map) {
     map.on('zoomend', function () {
-        if (compMark) {
-            applyRotation(compMark);
-        }
+		ships.forEach(applyRotation);
     });
+}
+
+function addShipFromContext(e, map) {
+    createShip(e.latlng, map, 0);
 }
 
 
@@ -307,5 +353,7 @@ export {
     clearXmarks,
     clearComp,
 	keepRotationOnZoom,
-    setQstring
+    setQstring,
+	addShipFromContext,
+
 };
