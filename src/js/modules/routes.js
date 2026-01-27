@@ -5,9 +5,10 @@ let currentRoute = null;
 let routeId = 1;
 
 const DOT_SPACING = 1; // px → bolinha, 10px, bolinha
-const UNITS_PER_QUADRANT = 20;
-const KM_PER_UNIT = 1.25;
-const DAYS_PER_UNIT = 0.15;
+const UNITS_PER_QUADRANT = 8;
+const KM_PER_QUADRANT = 25;
+const HOURS_PER_QUADRANT = 3;
+
 
 
 const MAX_ROUTES = 3;
@@ -146,10 +147,10 @@ function hoursToDaysAndHours(totalHours) {
 
 function finalizeRoute(route) {
 
-    const units = route.totalDistance;
+    const quadrants = route.totalDistance / UNITS_PER_QUADRANT;
 
-    const km = units * 1.25;
-    const totalHours = units * 0.15;
+    const km = quadrants * KM_PER_QUADRANT;
+    const totalHours = quadrants * HOURS_PER_QUADRANT;
 
     const time = hoursToDaysAndHours(totalHours);
 
@@ -161,6 +162,7 @@ function finalizeRoute(route) {
 
     updateRoutesPanel();
 }
+
 
 
 
