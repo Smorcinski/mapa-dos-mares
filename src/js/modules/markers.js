@@ -188,6 +188,18 @@ var xmarksspot = L.icon({
 
 
 function enableShipControls(ship, map) {
+	ship.on('click', function(e) {
+
+		if (e.originalEvent.shiftKey && ship._isEnemy) {
+
+			map.removeLayer(ship);
+			ships = ships.filter(s => s !== ship);
+
+			return;
+		}
+
+	});
+
 
     let dragging = false;
     let rotating = false;
@@ -208,15 +220,18 @@ function enableShipControls(ship, map) {
     map.on('mousemove', function(e) {
 
         if (dragging) {
-            const from = ship.getLatLng();
-            const to = e.latlng;
+			const from = ship.getLatLng();
+			const to = e.latlng;
+		
+			ship.setLatLng(to);
 
-            ship.setLatLng(to);
+			const angle = calculateAngle(from, to);
+			ship._angle = angle;
+			applyRotation(ship);
 
-            const angle = calculateAngle(from, to);
-            ship._angle = angle;
-            applyRotation(ship);
-        }
+			updateShipTrail(ship, to, map);
+		}
+
 
         if (rotating) {
             const center = ship.getLatLng();
@@ -368,6 +383,47 @@ function keepRotationOnZoom(map) {
 function addShipFromContext(e, map) {
     createShip(e.latlng, map, 0);
 }
+
+function createTrailDot(latLng, map, color) {
+    return L.circleMarker(latLng, {
+        radius: 5,
+        color: color,
+        fillColor: color,
+        fillOpacity: 0.5,
+        weight: 0,
+        interactive: false,
+        pane: "shadowPane" // garante que fique abaixo do navio
+    }).addTo(map);
+}
+
+function distance(a, b) {
+    const dx = a.lng - b.lng;
+    const dy = a.lat - b.lat;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+function updateShipTrail(ship, latlng, map) {
+
+    if (!ship._trail) ship._trail = [];
+    if (!ship._lastTrailPos) ship._lastTrailPos = latlng;
+
+    const minDist = 3; // controle do espaçamento entre bolinhas
+
+    if (distance(ship._lastTrailPos, latlng) < minDist) return;
+
+    const color = ship._isEnemy ? "#ff0000" : "#0055ff";
+
+    const dot = createTrailDot(latlng, map, color);
+
+    ship._trail.push(dot);
+    ship._lastTrailPos = latlng;
+
+    if (ship._trail.length > 20) {
+        const old = ship._trail.shift();
+        map.removeLayer(old);
+    }
+}
+
 
 
 export {
