@@ -133,13 +133,35 @@ function getNextRouteColor() {
     return c;
 }
 
+function hoursToDaysAndHours(totalHours) {
+
+    const total = Math.ceil(totalHours); // sempre arredonda pra cima
+
+    const days = Math.floor(total / 24);
+    const hours = total % 24;
+
+    return { days, hours };
+}
+
+
 function finalizeRoute(route) {
 
     const units = route.totalDistance;
 
-    route.km = (units * KM_PER_UNIT).toFixed(1);
-    route.days = (units * DAYS_PER_UNIT).toFixed(1);
+    const km = units * 1.25;
+    const totalHours = units * 0.15;
+
+    const time = hoursToDaysAndHours(totalHours);
+
+    route.km = km.toFixed(1);
+    route.timeText =
+        time.days > 0
+            ? `${time.days} dia${time.days > 1 ? "s" : ""} e ${time.hours} hora${time.hours > 1 ? "s" : ""}`
+            : `${time.hours} hora${time.hours > 1 ? "s" : ""}`;
+
+    updateRoutesPanel();
 }
+
 
 
 
@@ -160,7 +182,7 @@ function updateRoutesPanel() {
                 Rota ${route.id}
             </div>
             <div class="route-info">
-                ${route.km} km — ${route.days} dias
+                ${route.km} km — ${route.timeText}
             </div>
             <button class="route-delete">✖</button>
         `;
