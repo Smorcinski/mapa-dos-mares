@@ -755,6 +755,47 @@ function adjustIslandsAnchorPointOnZoom(anchorXmodifier){
 	});
 }
 
+document.getElementById("toggle-cannons").onchange = e => {
+
+    cannonConesEnabled = e.target.checked;
+
+    ships.forEach(ship => {
+        if (cannonConesEnabled) {
+            updateCannonCones(ship);
+        } else {
+            removeCannonCones(ship);
+        }
+    });
+};
+
+const deck = document.getElementById("vision-deck");
+const mast = document.getElementById("vision-mast");
+const scope = document.getElementById("vision-scope");
+
+deck.onchange = () => {
+
+    if (!deck.checked) {
+        mast.checked = false;
+        scope.checked = false;
+        mast.disabled = true;
+        scope.disabled = true;
+        visionLevel = 0;
+    } else {
+        mast.disabled = false;
+        scope.disabled = false;
+        visionLevel = 1;
+    }
+
+    updateVisionCircle(playerShip);
+};
+
+mast.onchange = scope.onchange = () => {
+
+    visionLevel = 1 + (mast.checked ? 1 : 0) + (scope.checked ? 1 : 0);
+
+    updateVisionCircle(playerShip);
+};
+
 
 var popUpInt = 0;
 $(function() {

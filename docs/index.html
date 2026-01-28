@@ -94,17 +94,39 @@
                 <a href=""><img src="images/icon-w.png" class="sotm_logo" /></a>
 
 
-                <div class="island-finder buttonGroup">
-                    <p>ISLAND FINDER</p>
-                    <button type="button" data-dir="left" class="js-searchforisland">&#x21E0</button>
-                    <button type="button" data-dir="right" class="js-searchforisland">&#x21E2</button>
-                </div>
+                <div class="tool-group">
+					<h3>Canhões</h3>
+					<label>
+						<input type="checkbox" id="toggle-cannons">
+						Mostrar campo de tiro
+					</label>
+				</div>
+				<div class="tool-group">
+				  <h3>Visão</h3>
+
+				  <label>
+					<input type="checkbox" id="vision-deck">
+					Convés
+				  </label>
+
+				  <label>
+					<input type="checkbox" id="vision-mast" disabled>
+					Mastro
+				  </label>
+
+				  <label>
+					<input type="checkbox" id="vision-scope" disabled>
+					Luneta
+				  </label>
+				</div>
+
 				
 				<div class="buttonGroup route-panel">
 					<p>ROTAS</p>
 					<button id="add-route-btn">➕ Adicionar Rota</button>
 					<div id="routes-panel"></div>
 				</div>
+				
 
                 <div class="buttonGroup">
                     <fieldset class="toggle beacons">

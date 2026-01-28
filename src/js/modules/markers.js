@@ -1,3 +1,7 @@
+let cannonConesEnabled = false;
+let cannonCones = new Map(); // shipId => {left, right}
+let visionCircle = null;
+let visionLevel = 0; // 0 = nenhum | 1 = convés | 2 = mastro | 3 = luneta
 
 var xMarkers = [];
 var ships = [];
@@ -139,6 +143,30 @@ var xmarksspot = L.icon({
     popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
 });
 */
+
+function updateVisionCircle(ship) {
+
+    if (visionCircle) {
+        visionCircle.remove();
+        visionCircle = null;
+    }
+
+    if (visionLevel === 0) return;
+
+    const radiusUnits = visionLevel * 0.7 * 8;
+
+    visionCircle = L.circle(ship.marker.getLatLng(), {
+        radius: radiusUnits,
+        color: "white",
+        fillColor: "white",
+        fillOpacity: 0.2,
+        weight: 1,
+        interactive: false,
+        pane: "shadowPane"
+    }).addTo(map);
+}
+
+
 function createShip(latLng, map, angle = 0, isEnemy = false) {
 
     const ship = L.marker(latLng, {
@@ -230,6 +258,10 @@ function enableShipControls(ship, map) {
 			applyRotation(ship);
 
 			updateShipTrail(ship, to, map);
+			updateCannonCones(ship);
+			updateVisionCircle(playerShip);
+
+
 		}
 
 
@@ -248,6 +280,21 @@ function enableShipControls(ship, map) {
         map.dragging.enable();
     });
 }
+
+
+function updateCannonCones(ship) {
+
+    if (!cannonConesEnabled) return;
+
+    removeCannonCones(ship);
+
+    const color = ship.isEnemy ? "rgba(255,255,0,0.5)" : "rgba(0,255,0,0.5)";
+
+    const cones = createCannonCones(ship, map, color);
+
+    cannonCones.set(ship.id, cones);
+}
+
 
 function calculateAngle(from, to) {
     const dx = to.lng - from.lng;
@@ -424,6 +471,57 @@ function updateShipTrail(ship, latlng, map) {
     }
 }
 
+function createCannonCones(ship, map, color) {
+
+    const center = ship.marker.getLatLng();
+    const angle = ship.angle; // rotação do navio em graus
+
+    const length = 200;
+    const width = 60;
+
+    function makeCone(dir) {
+
+        const baseAngle = angle + (dir * 90);
+
+        const tip = center;
+
+        const far = L.GeometryUtil.destination(
+            tip,
+            baseAngle,
+            length
+        );
+
+        const left = L.GeometryUtil.destination(
+            far,
+            baseAngle + 90,
+            width / 2
+        );
+
+        const right = L.GeometryUtil.destination(
+            far,
+            baseAngle - 90,
+            width / 2
+        );
+
+        return L.polygon([
+            tip,
+            left,
+            right
+        ], {
+            color: color,
+            fillColor: color,
+            fillOpacity: 0.5,
+            weight: 0,
+            interactive: false,
+            pane: "shadowPane"
+        }).addTo(map);
+    }
+
+    return {
+        left: makeCone(-1),
+        right: makeCone(1)
+    };
+}
 
 
 export {
