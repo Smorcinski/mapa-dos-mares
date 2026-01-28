@@ -1,0 +1,266 @@
+Perfeito. Vou te entregar um **contexto completo, técnico e organizado**, para você colar direto em outra IA sem ter que reexplicar tudo do zero.
+
+---
+
+# 📌 CONTEXTO COMPLETO DO PROJETO – MAPA INTERATIVO RPG (SEA OF THIEVES BASE)
+
+## 🎯 Objetivo do projeto
+
+O usuário está adaptando um **mapa interativo open-source do jogo Sea of Thieves**, disponível no GitHub, para uso em um **RPG próprio de piratas**, chamado **Pacto das Marés**.
+
+O objetivo é:
+
+* Manter o mapa base (ilhas, grade, distância, zoom, marcações)
+* Customizar:
+
+  * Rotas
+  * Sistema de tempo de viagem
+  * Inserção de navios e inimigos
+  * Cálculo de distância em **quadrantes → km → horas → dias + horas**
+  * Interface
+  * Elementos visuais
+* Hospedar tudo no **GitHub Pages**
+
+---
+
+# 🧩 Projeto original
+
+Base:
+Mapa interativo do Sea of Thieves em **JavaScript + Leaflet + Webpack + Gulp + Sass**.
+
+Estrutura principal:
+
+```
+src/
+  js/
+    sotm.js           → arquivo principal do mapa
+    modules/
+      pwa.js
+      markers.js
+      routes.js
+      place_list.js
+      etc
+  scss/
+docs/
+  js/sotm.js          → bundle final gerado
+  css/styles.css      → css compilado
+index.html
+gulpfile.js
+webpack.config.js
+```
+
+Build com:
+
+```
+npx gulp
+```
+
+E deploy manual no GitHub Pages.
+
+---
+
+# 🛠️ Alterações já feitas
+
+## 1️⃣ Sistema de distância e tempo
+
+Original:
+
+* Cada quadrante = 3 horas
+
+Customização desejada:
+
+* Cada quadrante = **25 km**
+* Cada quadrante = **3 horas**
+* Converter automaticamente:
+
+  * km → horas → dias + horas
+* Exibir formato:
+
+  > "2 dias e 4 horas"
+
+Com regra:
+
+* Arredondar horas sempre **para cima**
+
+  * Ex: 3.2 → 4
+
+Problema:
+
+* Cálculos estavam errados:
+
+  * 3 quadrantes retornavam **20.7km e 3 horas**, o que é matematicamente impossível
+
+Correções realizadas:
+
+* Ajustes nas fórmulas de conversão dentro de **routes.js** e/ou **tools.js**
+
+---
+
+## 2️⃣ Sistema de rotas
+
+Foi ajustado o sistema que desenha linhas no mapa:
+
+* Criado botão:
+
+  ```html
+  <button id="add-route-btn">➕ Adicionar Rota</button>
+  ```
+
+* Associado ao JS:
+
+  ```js
+  routes.startRouteDrawing(map);
+  ```
+
+---
+
+## 3️⃣ Interface – Sidebar quebrando layout
+
+A sidebar aumentou e empurrou o mapa, fazendo ele sumir.
+
+Correção:
+
+* Ajustes no **styles.scss**
+* Rebuild do CSS via Gulp
+
+---
+
+# 💥 Problema crítico atual
+
+Após as modificações e rebuild:
+
+👉 **O mapa parou completamente de carregar.**
+
+Console mostra:
+
+```
+Uncaught TypeError: Cannot read properties of null (reading 'addEventListener')
+    at sotm.js:1:4081
+```
+
+E também:
+
+```
+Failed to register a ServiceWorker
+https://smorcinski.github.io/service-worker.js → 404
+```
+
+---
+
+# 🔍 Diagnóstico técnico real
+
+## Importante:
+
+No arquivo **src/js/sotm.js NÃO EXISTE nenhum `addEventListener`.**
+
+Esse erro surge porque:
+
+👉 O **webpack + babel** geram código interno com `addEventListener` nos módulos.
+
+O erro está vindo de **um dos módulos importados**, principalmente:
+
+```js
+import * as pwa from './modules/pwa.js';
+```
+
+---
+
+# ⚠️ Origem real do bug
+
+O projeto original foi feito para rodar com:
+
+* CDN próprio
+* Service Worker ativo
+* Estrutura PWA completa
+
+No **GitHub Pages**, não existe:
+
+```
+/service-worker.js
+```
+
+Resultado:
+
+* O módulo `pwa.js` tenta registrar um service worker inexistente
+* Ele também tenta acessar elementos DOM que não existem
+* Isso gera **null.addEventListener**, quebrando TODO o carregamento
+
+---
+
+# 🧠 Conclusão técnica
+
+👉 **O mapa está quebrando por causa do sistema PWA, não por causa do mapa em si.**
+
+---
+
+# ✅ Solução correta proposta
+
+Desativar totalmente o PWA:
+
+### 1) No `sotm.js`, remover:
+
+```js
+import * as pwa from './modules/pwa.js';
+```
+
+### 2) Remover qualquer chamada:
+
+```js
+pwa.*
+```
+
+### 3) Garantir que não exista tentativa de registrar:
+
+```
+navigator.serviceWorker.register(...)
+```
+
+---
+
+# 📌 Estado atual
+
+* O projeto compila via `gulp`
+* O build gera `docs/js/sotm.js`
+* Ao subir no GitHub Pages:
+
+  * O mapa não abre
+  * O erro de `addEventListener` impede o boot
+
+---
+
+# 🎯 Próximo passo recomendado
+
+1. Desativar PWA
+2. Rebuild via gulp
+3. Subir novamente no GitHub Pages
+4. Confirmar:
+
+   * Se o mapa abre
+   * Se as rotas funcionam
+   * Se o cálculo de distância/tempo está correto
+
+---
+
+# 🔥 Observação importante
+
+Todas as alterações feitas até agora foram:
+
+* Estruturais
+* Matemáticas
+* UI
+
+👉 **Nenhuma deveria impedir o mapa de abrir.**
+
+O bloqueio é **exclusivamente arquitetural (PWA + GitHub Pages).**
+
+---
+
+Se quiser, depois que resolver, a gente continua de onde parou e finaliza:
+
+* Sistema de navegação naval
+* Mecânica de dias de viagem
+* Sistema tático de combate naval
+
+---
+
+Se precisar, posso gerar uma **versão resumida** ou **versão ultra técnica para devs**.

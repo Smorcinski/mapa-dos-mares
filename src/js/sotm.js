@@ -1,4 +1,3 @@
-import * as pwa from './modules/pwa.js';
 import * as island_data from './modules/island_data.js';
 import * as throne_data from './modules/throne_data.js';
 import * as beacon_data from './modules/beacon_data.js';
