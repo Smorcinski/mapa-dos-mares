@@ -2,6 +2,10 @@ $searchWidth: 225px;
 
 
 aside.sidebar {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
 
     //background: $blue_1; /* Old browsers */
     //background: -moz-linear-gradient(top, $blue_1 0%, $dark 100%); /* FF3.6-15 */
@@ -284,6 +288,13 @@ aside.sidebar {
         width: 70%;
         display: block;
         margin: 10px auto 16px auto;
+        flex-shrink: 0;
+    }
+
+    .sidebar-scroll {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
     }
 
     .icons {

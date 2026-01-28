@@ -157,7 +157,8 @@ function updateVisionCircle(ship, level, map) {
 
     if (!level || level <= 0) return;
 
-    const radiusUnits = level * 0.7 * 8;
+    // 0,7 quadrante por nível; reduzido em 70% (fica 30% do original)
+    const radiusUnits = level * 0.7 * 8 * 0.3;
 
     ship._visionCircle = L.circle(ship.getLatLng(), {
         radius: radiusUnits,
@@ -239,13 +240,13 @@ function createShipPanel(ship, map) {
     cannonsInput.type = "checkbox";
     cannonsInput.checked = false;
     cannonsLabel.appendChild(cannonsInput);
-    cannonsLabel.appendChild(document.createTextNode("Canhões ativos"));
+    cannonsLabel.appendChild(document.createTextNode("Alcance dos Canhões"));
     block.appendChild(cannonsLabel);
 
     cannonsInput.onchange = () => {
         ship._cannonsEnabled = cannonsInput.checked;
         if (ship._cannonsEnabled) {
-            updateCannonCones(ship);
+            updateCannonCones(ship, map);
         } else {
             removeCannonCones(ship);
         }
@@ -401,32 +402,24 @@ function enableShipControls(ship, map) {
         if (dragging) {
 			const from = ship.getLatLng();
 			const to = e.latlng;
-		
+
 			ship.setLatLng(to);
-
-            // move elementos vinculados ao navio
-            if (ship._visionCircle) {
-                ship._visionCircle.setLatLng(to);
-            }
-            if (ship._cannonCircle) {
-                ship._cannonCircle.setLatLng(to);
-            }
-
 			const angle = calculateAngle(from, to);
 			ship._angle = angle;
 			applyRotation(ship);
 
-			updateShipTrail(ship, to, map);
-			updateCannonCones(ship);
-			updateVisionCircle(playerShip);
-		}
+            if (ship._visionCircle) ship._visionCircle.setLatLng(to);
+            if (ship._cannonsEnabled) updateCannonCones(ship, map);
 
+			updateShipTrail(ship, to, map);
+		}
 
         if (rotating) {
             const center = ship.getLatLng();
             const angle = calculateAngle(center, e.latlng);
             ship._angle = angle;
             applyRotation(ship);
+            if (ship._cannonsEnabled) updateCannonCones(ship, map);
         }
 
     });
@@ -439,7 +432,23 @@ function enableShipControls(ship, map) {
 }
 
 
-function updateCannonCones(ship) {
+function removeCannonCones(ship) {
+    if (!cannonCones || !ship._id || !cannonCones.has(ship._id)) return;
+    const cones = cannonCones.get(ship._id);
+    if (cones && cones.left) cones.left.remove();
+    if (cones && cones.right) cones.right.remove();
+    cannonCones.delete(ship._id);
+}
+
+function destinationPoint(latlng, bearingDeg, dist) {
+    const r = bearingDeg * Math.PI / 180;
+    return L.latLng(
+        latlng.lat + dist * Math.cos(r),
+        latlng.lng + dist * Math.sin(r)
+    );
+}
+
+function updateCannonCones(ship, map) {
 
     if (!ship._cannonsEnabled) return;
 
@@ -647,52 +656,30 @@ function updateShipTrail(ship, latlng, map) {
 function createCannonCones(ship, map, color) {
 
     const center = ship.getLatLng();
-    const angle = ship._angle || 0; // rotação do navio em graus
+    const angle = ship._angle || 0; // proa do navio (graus)
 
-    const length = 200;
-    const width = 60;
+    // raio = 0,5 quadrante (8 unidades por quadrante, como em routes.js)
+    const radius = 0.5 * 8;
 
-    function makeCone(dir) {
-
-        const baseAngle = angle + (dir * 90);
-
-        const tip = center;
-
-        const far = L.GeometryUtil.destination(
-            tip,
-            baseAngle,
-            length
-        );
-
-        const left = L.GeometryUtil.destination(
-            far,
-            baseAngle + 90,
-            width / 2
-        );
-
-        const right = L.GeometryUtil.destination(
-            far,
-            baseAngle - 90,
-            width / 2
-        );
-
-        return L.polygon([
-            tip,
-            left,
-            right
-        ], {
+    // fatia de 45° perpendicular à proa: esquerda = angle-90, direita = angle+90
+    function makeSlice(centerAngle) {
+        const a1 = (centerAngle - 22.5) * Math.PI / 180;
+        const a2 = (centerAngle + 22.5) * Math.PI / 180;
+        const p1 = L.latLng(center.lat + radius * Math.cos(a1), center.lng + radius * Math.sin(a1));
+        const p2 = L.latLng(center.lat + radius * Math.cos(a2), center.lng + radius * Math.sin(a2));
+        return L.polygon([center, p1, p2], {
             color: color,
             fillColor: color,
             fillOpacity: 0.5,
-            weight: 0,
+            weight: 1,
             interactive: false,
             pane: "shadowPane"
         }).addTo(map);
     }
 
     return {
-        left: makeCone(-1),
-        right: makeCone(1)
+        left: makeSlice(angle - 90),
+        right: makeSlice(angle + 90)
     };
 }
 
