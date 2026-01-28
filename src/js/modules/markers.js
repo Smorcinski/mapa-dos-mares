@@ -6,6 +6,9 @@ let visionLevel = 0; // 0 = nenhum | 1 = convés | 2 = mastro | 3 = luneta
 var xMarkers = [];
 var ships = [];
 
+// modo de exclusão pontual (apagar 1 navio / 1 marcador)
+var deleteMode = false;
+
 
 var markerIcons = {
     "throne_L" : {
@@ -213,13 +216,46 @@ var xmarksspot = L.icon({
 });
 
 
+function removeShip(ship, map) {
+
+    // remove rastro de bolinhas, se existir
+    if (ship._trail && Array.isArray(ship._trail)) {
+        ship._trail.forEach(dot => map.removeLayer(dot));
+        ship._trail = [];
+    }
+
+    // remove cones de canhão, se estiverem ativos
+    if (cannonCones && ship.id && cannonCones.has(ship.id)) {
+        const cones = cannonCones.get(ship.id);
+        if (cones.left) cones.left.remove();
+        if (cones.right) cones.right.remove();
+        cannonCones.delete(ship.id);
+    }
+
+    // se este navio estiver ligado ao círculo de visão, limpa o círculo
+    if (typeof playerShip !== "undefined" && ship === playerShip && visionCircle) {
+        visionCircle.remove();
+        visionCircle = null;
+    }
+
+    map.removeLayer(ship);
+    ships = ships.filter(s => s !== ship);
+}
+
+
 function enableShipControls(ship, map) {
 	ship.on('click', function(e) {
 
+        // modo de exclusão pontual: apaga somente este navio/inimigo
+        if (deleteMode) {
+            removeShip(ship, map);
+            deleteMode = false;
+            return;
+        }
+
 		if (e.originalEvent.shiftKey && ship._isEnemy) {
 
-			map.removeLayer(ship);
-			ships = ships.filter(s => s !== ship);
+			removeShip(ship, map);
 
 			return;
 		}
@@ -381,7 +417,7 @@ function applyRotation(marker) {
 }
 
 function clearComp(map) {
-    ships.forEach(ship => map.removeLayer(ship));
+    ships.forEach(ship => removeShip(ship, map));
     ships = [];
 }
 
@@ -391,6 +427,17 @@ function addXmark(latLng, map) {
         console.log('marker dragend event');
         setQstring();
     });
+
+    // exclusão pontual: se estivermos em modo delete, apaga somente este marcador
+    xMark.on('click', function(e) {
+        if (!deleteMode) return;
+
+        map.removeLayer(xMark);
+        xMarkers = xMarkers.filter(m => m !== xMark);
+        setQstring();
+        deleteMode = false;
+    });
+
     xMarkers.push(xMark);
 }
 
@@ -399,6 +446,11 @@ function clearXmarks(map) {
         map.removeLayer(mkr);
     });
     xMarkers = [];
+}
+
+// ativado a partir da UI (botão "apagar seleção")
+function enableDeleteMode() {
+    deleteMode = true;
 }
 
 function setQstring() {
@@ -533,5 +585,6 @@ export {
 	keepRotationOnZoom,
     setQstring,
 	addShipFromContext,
-	addEnemyFromContext
+	addEnemyFromContext,
+    enableDeleteMode
 };

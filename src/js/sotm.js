@@ -823,6 +823,11 @@ $(function() {
         mF.setQstring();
     });
 
+    $(".js-deleteOne").click(function() {
+        mF.enableDeleteMode();
+        showPopup("Clique em um marcador ou navio para apagá-lo.");
+    });
+
 
     pList.buildPlaceList();
 
