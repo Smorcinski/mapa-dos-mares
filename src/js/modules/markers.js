@@ -174,10 +174,11 @@ function createShip(latLng, map, angle = 0, isEnemy = false) {
         draggable: false
     }).addTo(map);
 
+    // guarda metadados no próprio marker
     ship._angle = angle;
     ship._isEnemy = isEnemy;
 
-    if (isEnemy) {
+    if (isEnemy && ship._icon) {
         ship._icon.classList.add("enemy-ship");
     }
 
@@ -192,9 +193,6 @@ function createShip(latLng, map, angle = 0, isEnemy = false) {
 function addEnemyFromContext(e, map) {
     createShip(e.latlng, map, 0, true);
 }
-
-
-
 
 var boatMarker = L.icon({
     iconUrl: 'images/markers/boat_marker.png',

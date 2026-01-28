@@ -43,6 +43,10 @@ var currentSearchIsland = -1;
 var compassDragStart = null;
 var compassDragging = false;
 
+// modo de posicionamento de navios/inimigos via clique no mapa
+// valores possíveis: null | 'ship' | 'enemy'
+var pendingPlacement = null;
+
 
 
 //console.log("-- detect isOnline: " + isOnline);
@@ -111,6 +115,18 @@ var layer = L.tileLayer(cdnpath + "images/tiles/v3.6/{z}/{x}/{y}.png", {
 
 function onMapClick(e) {
     console.log("You clicked the map at " + e.latlng);
+
+    if (pendingPlacement === 'ship') {
+        mF.addShipFromContext({ latlng: e.latlng }, map);
+        pendingPlacement = null;
+        return;
+    }
+
+    if (pendingPlacement === 'enemy') {
+        mF.addEnemyFromContext({ latlng: e.latlng }, map);
+        pendingPlacement = null;
+        return;
+    }
 }
 
 map.on('click', onMapClick);
@@ -633,13 +649,17 @@ map.on('contextmenu', function(e) {
     });
 	
 	$(".js-addShip").click(function(){
-		mF.addShipFromContext({ latlng: myLoc }, map);
-		map.closePopup();
-	});
+        // ativa modo de posicionamento de navio no próximo clique no mapa
+        pendingPlacement = 'ship';
+        map.closePopup();
+        showPopup("Clique no mapa para adicionar um navio.");
+    });
 
 	$(".js-addEnemy").click(function(){
-		mF.addEnemyFromContext({ latlng: myLoc }, map);
-		map.closePopup();
+        // ativa modo de posicionamento de inimigo no próximo clique no mapa
+        pendingPlacement = 'enemy';
+        map.closePopup();
+        showPopup("Clique no mapa para adicionar um inimigo.");
 	});
 
     
