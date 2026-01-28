@@ -772,6 +772,7 @@ if (toggleCannons) {
     };
 }
 
+
 const deck = document.getElementById("vision-deck");
 const mast = document.getElementById("vision-mast");
 const scope = document.getElementById("vision-scope");
@@ -802,6 +803,7 @@ if (deck && mast && scope) {
         updateVisionCircle(playerShip);
     };
 }
+
 
 
 
