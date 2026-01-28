@@ -810,9 +810,13 @@ if (deck && mast && scope) {
 var popUpInt = 0;
 $(function() {
 	
-	document.getElementById("add-route-btn").onclick = () => {
-		routes.startRouteDrawing(map);
-	};
+	const addRouteBtn = document.getElementById("add-route-btn");
+
+		if (addRouteBtn) {
+			addRouteBtn.onclick = () => {
+				routes.startRouteDrawing(map);
+			};
+		};
 
 
     pList.buildPlaceList();
