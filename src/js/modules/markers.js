@@ -157,8 +157,8 @@ function updateVisionCircle(ship, level, map) {
 
     if (!level || level <= 0) return;
 
-    // 0,7 quadrante por nível; reduzido em 70% (fica 30% do original)
-    const radiusUnits = level * 0.7 * 8 * 0.3;
+    // 0,7 quadrante por nível (Convés=0,7; Mastro=1,4; Luneta=2,1)
+    const radiusUnits = level * 0.7 * 8;
 
     ship._visionCircle = L.circle(ship.getLatLng(), {
         radius: radiusUnits,
@@ -368,6 +368,7 @@ function enableShipControls(ship, map) {
         if (deleteMode) {
             removeShip(ship, map);
             deleteMode = false;
+            if (typeof window.clearPlacementMessage === 'function') window.clearPlacementMessage();
             return;
         }
 
@@ -568,6 +569,7 @@ function addXmark(latLng, map) {
         xMarkers = xMarkers.filter(m => m !== xMark);
         setQstring();
         deleteMode = false;
+        if (typeof window.clearPlacementMessage === 'function') window.clearPlacementMessage();
     });
 
     xMarkers.push(xMark);

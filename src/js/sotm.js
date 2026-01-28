@@ -123,20 +123,21 @@ function onMapClick(e) {
         mF.addXmark(e.latlng, map);
         mF.setQstring();
         pendingPlacement = null;
+        hidePopup();
         return;
     }
 
     if (pendingPlacement === 'ship') {
-        var ship = mF.addShipFromContext({ latlng: e.latlng }, map);
-        createShipPanel(ship, false);
+        mF.addShipFromContext({ latlng: e.latlng }, map);
         pendingPlacement = null;
+        hidePopup();
         return;
     }
 
     if (pendingPlacement === 'enemy') {
-        var enemyShip = mF.addEnemyFromContext({ latlng: e.latlng }, map);
-        createShipPanel(enemyShip, true);
+        mF.addEnemyFromContext({ latlng: e.latlng }, map);
         pendingPlacement = null;
+        hidePopup();
         return;
     }
 }
@@ -639,6 +640,7 @@ function showPopup(words) {
 function hidePopup() {
     $('.floating_dialog').removeClass("show");
 }
+window.clearPlacementMessage = hidePopup;
 
 
 //Graticule
