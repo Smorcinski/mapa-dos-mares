@@ -158,7 +158,8 @@ function updateVisionCircle(ship, level, map) {
     if (!level || level <= 0) return;
 
     // 0,7 quadrante por nível (Convés=0,7; Mastro=1,4; Luneta=2,1)
-    const radiusUnits = level * 0.7 * 8;
+    // reduzido para 70% do tamanho atual
+    const radiusUnits = level * 0.7 * 8 * 0.7;
 
     ship._visionCircle = L.circle(ship.getLatLng(), {
         radius: radiusUnits,
@@ -196,6 +197,9 @@ function createShip(latLng, map, angle = 0, isEnemy = false) {
 
     ships.push(ship);
 
+    // aplica escala do ícone no zoom atual
+    if (map) updateShipsIconScale(map);
+
     return ship;
 }
 
@@ -208,6 +212,41 @@ var boatMarker = L.icon({
     iconSize:     [50, 59], // size of the icon
     iconAnchor:   [25, 29]
 });
+
+const BOAT_ICON_BASE = {
+    size: [50, 59],
+    anchor: [25, 29],
+    url: 'images/markers/boat_marker.png'
+};
+
+function getBoatIconForZoom(leafletZoom, leafletMaxZoom = 7) {
+    // zoom mais alto = mais perto (ícone no tamanho base)
+    const stepsOut = Math.max(0, leafletMaxZoom - leafletZoom);
+    const scale = 1 / Math.pow(2, stepsOut);
+
+    const w = Math.max(1, Math.round(BOAT_ICON_BASE.size[0] * scale));
+    const h = Math.max(1, Math.round(BOAT_ICON_BASE.size[1] * scale));
+    const ax = Math.max(0, Math.round(BOAT_ICON_BASE.anchor[0] * scale));
+    const ay = Math.max(0, Math.round(BOAT_ICON_BASE.anchor[1] * scale));
+
+    return L.icon({
+        iconUrl: BOAT_ICON_BASE.url,
+        iconSize: [w, h],
+        iconAnchor: [ax, ay]
+    });
+}
+
+function updateShipsIconScale(map) {
+    const z = map.getZoom();
+    const maxZ = (typeof map.getMaxZoom === "function" ? map.getMaxZoom() : 7) || 7;
+
+    ships.forEach((ship) => {
+        if (!ship) return;
+        ship.setIcon(getBoatIconForZoom(z, maxZ));
+        if (ship._isEnemy && ship._icon) ship._icon.classList.add("enemy-ship");
+        applyRotation(ship);
+    });
+}
 
 
 var xmarksspot = L.icon({
@@ -607,6 +646,7 @@ function getXstring() {
 
 function keepRotationOnZoom(map) {
     map.on('zoomend', function () {
+        updateShipsIconScale(map);
 		ships.forEach(applyRotation);
     });
 }
@@ -661,7 +701,8 @@ function createCannonCones(ship, map, color) {
     const angle = ship._angle || 0; // proa do navio (graus)
 
     // raio = 0,5 quadrante (8 unidades por quadrante, como em routes.js)
-    const radius = 0.5 * 8;
+    // reduzido para 70% do tamanho atual
+    const radius = 0.5 * 8 * 0.7;
 
     // fatia de 45° perpendicular à proa: esquerda = angle-90, direita = angle+90
     function makeSlice(centerAngle) {
@@ -695,6 +736,7 @@ export {
     clearXmarks,
     clearComp,
 	keepRotationOnZoom,
+    updateShipsIconScale,
     setQstring,
 	addShipFromContext,
 	addEnemyFromContext,

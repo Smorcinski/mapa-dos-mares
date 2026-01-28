@@ -29,3 +29,17 @@
     }
 }
 
+// Zoom (+ / -) — indicador do nível (1..6)
+.leaflet-control-zoom-level {
+    background: rgba(255, 255, 255, 0.95);
+    color: #000;
+    font-size: 12px;
+    line-height: 18px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.65);
+    margin-top: 6px;
+    text-align: center;
+    min-width: 72px;
+}
+

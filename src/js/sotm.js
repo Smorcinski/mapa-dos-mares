@@ -95,6 +95,27 @@ routes.attachRouteDrawingEvents(map);
 
 L.control.zoom({ position: 'bottomright' }).addTo(map);
 
+// Indicador de zoom (escala 1..6): 1 = mais perto (zoom máximo), 6 = mais distante (zoom mínimo)
+const zoomLevelControl = L.control({ position: 'bottomright' });
+zoomLevelControl.onAdd = function (map) {
+    const div = L.DomUtil.create('div', 'leaflet-control leaflet-control-zoom-level');
+    L.DomEvent.disableClickPropagation(div);
+
+    function render() {
+        const z = map.getZoom();
+        const maxZ = (typeof map.getMaxZoom === "function" ? map.getMaxZoom() : 7) || 7;
+        const minZ = (typeof map.getMinZoom === "function" ? map.getMinZoom() : 2) || 2;
+        const totalLevels = (maxZ - minZ) + 1; // aqui: 6
+        const level = (maxZ - z) + 1; // z=maxZ => 1
+        div.innerHTML = `Zoom ${level}/${totalLevels}`;
+    }
+
+    render();
+    map.on('zoomend', render);
+    return div;
+};
+zoomLevelControl.addTo(map);
+
 mF.keepRotationOnZoom(map);
 
 var height = 25522;
