@@ -34,6 +34,13 @@
 					<h3 id="main-vessel-title" contenteditable="true" spellcheck="false">Embarcação</h3>
 					<button id="main-vessel-position-btn">Posicionar Embarcação</button>
 					<button id="main-vessel-remove-btn" disabled>Remover Embarcação</button>
+					<label>Tipo</label>
+					<select id="main-vessel-type">
+						<option value="bote">Bote</option>
+						<option value="chalupa">Chalupa</option>
+						<option value="bergantim" selected>Bergantim</option>
+						<option value="galeao">Galeão</option>
+					</select>
 					<div class="vessel-options">
 						<label><input id="main-vessel-cannons" type="checkbox" disabled /> Alcance dos Canhões</label>
 						<label><input id="main-vessel-deck" type="checkbox" disabled /> Convés</label>
@@ -44,17 +51,10 @@
 
 				<div class="tool-group wind-group">
 					<h3>Vento</h3>
-					<div class="wind-force">
-						<div class="wind-force-labels"><span>1</span><span>2</span><span>3</span></div>
-						<div class="wind-force-inputs">
-							<input id="wind-force-1" type="checkbox" />
-							<input id="wind-force-2" type="checkbox" />
-							<input id="wind-force-3" type="checkbox" />
-						</div>
-					</div>
-					<div class="wind-direction">
-						<span>Direção do Vento</span>
-						<img id="wind-arrow" src="images/markers/seta1_marker.png" alt="Direção do vento" />
+					<label for="wind-strength">Força do Vento</label>
+					<div class="wind-slider-row">
+						<input id="wind-strength" type="range" min="1" max="6" step="1" value="1" />
+						<span id="wind-strength-value">1</span>
 					</div>
 				</div>
 

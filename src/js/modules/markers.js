@@ -159,7 +159,8 @@ function updateVisionCircle(ship, level, map) {
 
     // 0,7 quadrante por nível (Convés=0,7; Mastro=1,4; Luneta=2,1)
     // reduzido para 70% do tamanho atual
-    const radiusUnits = level * 0.7 * 8 * 0.7;
+    const mult = ship && ship._sizeMultiplier ? ship._sizeMultiplier : 1;
+    const radiusUnits = level * 0.7 * 8 * 0.7 * mult;
 
     ship._visionCircle = L.circle(ship.getLatLng(), {
         radius: radiusUnits,
@@ -187,8 +188,11 @@ function createShip(latLng, map, angle = 0, isEnemy = false, options = {}) {
     ship._angle = angle;
     ship._isEnemy = isEnemy;
     ship._id = (idOverride !== null ? idOverride : shipIdCounter++);
+    ship._name = isEnemy ? `Inimigo ${ship._id}` : `Navio ${ship._id}`;
+    ship._shipType = "bergantim";
+    ship._sizeMultiplier = 1;
     ship._visionLevel = 0;
-    ship._fogRadius = 0.7 * 8 * 0.7; // mesmo tamanho do "Convés" (nível 1) atual
+    ship._fogRadius = 0.7 * 8 * 0.7 * ship._sizeMultiplier; // mesmo tamanho do "Convés" (nível 1) atual
 
     if (isEnemy && ship._icon) {
         ship._icon.classList.add("enemy-ship");
@@ -221,29 +225,30 @@ function addEnemyFromContext(e, map) {
 }
 
 var boatMarker = L.icon({
-    iconUrl: 'images/markers/boat_marker.png',
-    iconSize:     [50, 59], // size of the icon
-    iconAnchor:   [25, 29]
+    iconUrl: 'images/markers/bergantim_marker.png',
+    iconSize:     [47, 90],
+    iconAnchor:   [13, 40]
 });
 
-const BOAT_ICON_BASE = {
-    size: [50, 59],
-    anchor: [25, 29],
-    url: 'images/markers/boat_marker.png'
+const SHIP_TYPES = {
+    bote: { url: 'images/markers/bote_marker.png', size: [33.5, 40], anchor: [10, 20], mult: 0.4 },
+    chalupa: { url: 'images/markers/chalupa_marker.png', size: [36.2, 60], anchor: [11, 26], mult: 0.7 },
+    bergantim: { url: 'images/markers/bergantim_marker.png', size: [47.2, 90], anchor: [13, 40], mult: 1.0 },
+    galeao: { url: 'images/markers/galeao_marker.png', size: [57.4, 140], anchor: [17, 62], mult: 1.2 }
 };
 
-function getBoatIconForZoom(leafletZoom, leafletMaxZoom = 7) {
-    // zoom mais alto = mais perto (ícone no tamanho base)
+function getShipIconForZoom(ship, leafletZoom, leafletMaxZoom = 7) {
+    const cfg = (ship && ship._iconCfg) ? ship._iconCfg : SHIP_TYPES.bergantim;
     const stepsOut = Math.max(0, leafletMaxZoom - leafletZoom);
     const scale = 1 / Math.pow(2, stepsOut);
 
-    const w = Math.max(1, Math.round(BOAT_ICON_BASE.size[0] * scale));
-    const h = Math.max(1, Math.round(BOAT_ICON_BASE.size[1] * scale));
-    const ax = Math.max(0, Math.round(BOAT_ICON_BASE.anchor[0] * scale));
-    const ay = Math.max(0, Math.round(BOAT_ICON_BASE.anchor[1] * scale));
+    const w = Math.max(1, Math.round(cfg.size[0] * scale));
+    const h = Math.max(1, Math.round(cfg.size[1] * scale));
+    const ax = Math.max(0, Math.round(cfg.anchor[0] * scale));
+    const ay = Math.max(0, Math.round(cfg.anchor[1] * scale));
 
     return L.icon({
-        iconUrl: BOAT_ICON_BASE.url,
+        iconUrl: cfg.url,
         iconSize: [w, h],
         iconAnchor: [ax, ay]
     });
@@ -255,10 +260,47 @@ function updateShipsIconScale(map) {
 
     ships.forEach((ship) => {
         if (!ship) return;
-        ship.setIcon(getBoatIconForZoom(z, maxZ));
+        ship.setIcon(getShipIconForZoom(ship, z, maxZ));
         if (ship._isEnemy && ship._icon) ship._icon.classList.add("enemy-ship");
         applyRotation(ship);
     });
+}
+
+function setShipType(ship, type, map) {
+    const cfg = SHIP_TYPES[type] || SHIP_TYPES.bergantim;
+    ship._shipType = type in SHIP_TYPES ? type : "bergantim";
+    ship._iconCfg = cfg;
+    ship._sizeMultiplier = cfg.mult || 1;
+    ship._fogRadius = 0.7 * 8 * 0.7 * ship._sizeMultiplier;
+
+    if (map) {
+        // atualiza ícone e escalas
+        updateShipsIconScale(map);
+        if (ship._visionLevel) updateVisionCircle(ship, ship._visionLevel, map);
+        if (ship._cannonsEnabled) updateCannonCones(ship, map);
+    }
+}
+
+function setShipName(ship, name) {
+    const n = (name || "").trim();
+    ship._name = n || ship._name;
+    if (ship._panelEl) {
+        const h = ship._panelEl.querySelector("h4");
+        if (h) h.textContent = ship._name;
+    }
+}
+
+function setShipCannonsEnabled(ship, enabled, map) {
+    ship._cannonsEnabled = !!enabled;
+    if (!map) return;
+    if (ship._cannonsEnabled) updateCannonCones(ship, map);
+    else removeCannonCones(ship);
+}
+
+function setShipVisionLevel(ship, level, map) {
+    ship._visionLevel = level || 0;
+    if (!map) return;
+    updateVisionCircle(ship, ship._visionLevel, map);
 }
 
 
@@ -283,8 +325,26 @@ function createShipPanel(ship, map) {
     block.className = "ship-block " + (ship._isEnemy ? "enemy" : "ally");
 
     const title = document.createElement("h4");
-    title.textContent = ship._isEnemy ? `Inimigo ${ship._id}` : `Navio ${ship._id}`;
+    title.textContent = ship._name || (ship._isEnemy ? `Inimigo ${ship._id}` : `Navio ${ship._id}`);
+    title.contentEditable = "true";
+    title.spellcheck = false;
+    title.onblur = () => setShipName(ship, title.textContent);
     block.appendChild(title);
+
+    // tipo de navio
+    const typeLabel = document.createElement("label");
+    typeLabel.appendChild(document.createTextNode("Tipo"));
+    block.appendChild(typeLabel);
+    const typeSelect = document.createElement("select");
+    typeSelect.innerHTML = `
+        <option value="bote">Bote</option>
+        <option value="chalupa">Chalupa</option>
+        <option value="bergantim" selected>Bergantim</option>
+        <option value="galeao">Galeão</option>
+    `;
+    typeSelect.value = ship._shipType || "bergantim";
+    typeSelect.onchange = () => setShipType(ship, typeSelect.value, map);
+    block.appendChild(typeSelect);
 
     // checkbox de canhões (para todos)
     const cannonsLabel = document.createElement("label");
@@ -295,14 +355,7 @@ function createShipPanel(ship, map) {
     cannonsLabel.appendChild(document.createTextNode("Alcance dos Canhões"));
     block.appendChild(cannonsLabel);
 
-    cannonsInput.onchange = () => {
-        ship._cannonsEnabled = cannonsInput.checked;
-        if (ship._cannonsEnabled) {
-            updateCannonCones(ship, map);
-        } else {
-            removeCannonCones(ship);
-        }
-    };
+    cannonsInput.onchange = () => setShipCannonsEnabled(ship, cannonsInput.checked, map);
 
     // visão só para navios aliados
     if (!ship._isEnemy) {
@@ -332,8 +385,7 @@ function createShipPanel(ship, map) {
             if (deckInput.checked) level += 1;
             if (mastInput.checked) level += 1;
             if (scopeInput.checked) level += 1;
-            ship._visionLevel = level; // 0, 1, 2 ou 3
-            updateVisionCircle(ship, level, map);
+            setShipVisionLevel(ship, level, map);
         }
 
         deckInput.onchange = () => {
@@ -713,7 +765,8 @@ function createCannonCones(ship, map, color) {
 
     // raio = 0,5 quadrante (8 unidades por quadrante, como em routes.js)
     // reduzido para 70% do tamanho atual
-    const radius = 0.5 * 8 * 0.7;
+    const mult = ship && ship._sizeMultiplier ? ship._sizeMultiplier : 1;
+    const radius = 0.5 * 8 * 0.7 * mult;
 
     // fatia de 45° perpendicular à proa: esquerda = angle-90, direita = angle+90
     function makeSlice(centerAngle) {
@@ -752,6 +805,10 @@ export {
 	addShipFromContext,
 	addEnemyFromContext,
     createMainVesselFromContext,
+    setShipType,
+    setShipName,
+    setShipCannonsEnabled,
+    setShipVisionLevel,
     enableDeleteMode,
     removeShip
 };

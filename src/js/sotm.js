@@ -138,23 +138,14 @@ var layer = L.tileLayer(cdnpath + "images/tiles/v3.6/{z}/{x}/{y}.png", {
 }).addTo(map);
 
 // =========================
-// FOG OF WAR (Descoberta)
+// FOG OF WAR (Descoberta) — camada única opaca com "buracos"
 // =========================
 map.createPane('fogPane');
-map.getPane('fogPane').style.zIndex = 450; // acima do tile, abaixo de markers
-
-var fogLayer = L.layerGroup().addTo(map);
-var fogCells = new Map(); // "A1" => L.rectangle
-var fogDiscovered = new Set(); // "A1"
-var fogCellCenters = new Map(); // "A1" => {lat,lng}
+map.getPane('fogPane').style.zIndex = 450;
 
 // Tabelas compatíveis com o graticule (L.SimpleGraticule-sot.js)
-var LETTER_X = {
-    A:0,B:8,C:16,D:24,E:32,F:41,G:49,H:57,I:65,J:73,K:82,L:90,M:98,N:106,O:114,P:123,Q:131,R:139,S:147,T:155,U:164,V:172,W:180,X:188,Y:196,Z:205
-};
-var NUMBER_Y = {
-    1:0,2:-8,3:-16,4:-24,5:-31,6:-39,7:-47,8:-54,9:-62,10:-70,11:-77,12:-85,13:-93,14:-101,15:-108,16:-116,17:-124,18:-131,19:-139,20:-147,21:-154,22:-162,23:-170,24:-178,25:-185,26:-193
-};
+var LETTER_X = {A:0,B:8,C:16,D:24,E:32,F:41,G:49,H:57,I:65,J:73,K:82,L:90,M:98,N:106,O:114,P:123,Q:131,R:139,S:147,T:155,U:164,V:172,W:180,X:188,Y:196,Z:205};
+var NUMBER_Y = {1:0,2:-8,3:-16,4:-24,5:-31,6:-39,7:-47,8:-54,9:-62,10:-70,11:-77,12:-85,13:-93,14:-101,15:-108,16:-116,17:-124,18:-131,19:-139,20:-147,21:-154,22:-162,23:-170,24:-178,25:-185,26:-193};
 
 function normalizeCoord(raw) {
     if (!raw) return null;
@@ -163,74 +154,139 @@ function normalizeCoord(raw) {
     if (!m) return null;
     var letter = m[1];
     var num = parseInt(m[2], 10);
-    if (!LETTER_X[letter]) {
-        if (letter !== 'A') return null; // A é 0 (falsy)
-    }
-    if (!NUMBER_Y.hasOwnProperty(num)) return null;
+    if (!Object.prototype.hasOwnProperty.call(LETTER_X, letter)) return null;
+    if (!Object.prototype.hasOwnProperty.call(NUMBER_Y, num)) return null;
     return letter + String(num);
 }
 
-function buildFogGrid() {
-    // cria retângulos só dentro de um range razoável (A..Z, 1..26)
-    Object.keys(LETTER_X).forEach(function(letter) {
-        Object.keys(NUMBER_Y).forEach(function(nStr) {
-            var n = parseInt(nStr, 10);
-            var key = letter + String(n);
-            var x0 = LETTER_X[letter];
-            var y0 = NUMBER_Y[n];
-            var x1 = x0 + 8;
-            var y1 = y0 - 8;
-            var rect = L.rectangle([[y0, x0], [y1, x1]], {
-                stroke: false,
-                fillColor: "#9aa0a6",
-                fillOpacity: 0.65,
-                interactive: false,
-                pane: "fogPane"
-            });
-            fogCells.set(key, rect);
-            fogCellCenters.set(key, { lat: (y0 + y1) / 2, lng: (x0 + x1) / 2 });
-            fogLayer.addLayer(rect);
-        });
-    });
+function FogCanvasLayer(map) {
+    this._map = map;
+    this._canvas = L.DomUtil.create('canvas', 'fog-canvas');
+    this._canvas.style.position = 'absolute';
+    this._canvas.style.top = '0';
+    this._canvas.style.left = '0';
+    this._canvas.style.pointerEvents = 'none';
+    this._revealedCircles = []; // {latlng, radius}
+    this._revealedCells = new Set(); // "A1"
+    this._forcedCoveredCells = new Set(); // "A1"
 }
 
-function fogSetCellDiscovered(key, discovered) {
-    var rect = fogCells.get(key);
-    if (!rect) return;
-    if (discovered) {
-        if (fogDiscovered.has(key)) return;
-        fogDiscovered.add(key);
-        fogLayer.removeLayer(rect);
-    } else {
-        if (!fogDiscovered.has(key)) return;
-        fogDiscovered.delete(key);
-        fogLayer.addLayer(rect);
+FogCanvasLayer.prototype.addTo = function(map) {
+    this._map = map;
+    map.getPane('fogPane').appendChild(this._canvas);
+    map.on('move zoom resize', this._redraw, this);
+    this._redraw();
+    return this;
+};
+
+FogCanvasLayer.prototype._resize = function() {
+    var size = this._map.getSize();
+    if (this._canvas.width !== size.x) this._canvas.width = size.x;
+    if (this._canvas.height !== size.y) this._canvas.height = size.y;
+};
+
+FogCanvasLayer.prototype._latLngRadiusToPixels = function(latlng, radius) {
+    // CRS.Simple é linear: mede em pixels via dois pontos
+    var p0 = this._map.latLngToContainerPoint(latlng);
+    var p1 = this._map.latLngToContainerPoint([latlng.lat, latlng.lng + radius]);
+    return Math.abs(p1.x - p0.x);
+};
+
+FogCanvasLayer.prototype._clearCircle = function(ctx, latlng, radius) {
+    var p = this._map.latLngToContainerPoint(latlng);
+    var pr = this._latLngRadiusToPixels(latlng, radius);
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, pr, 0, Math.PI * 2);
+    ctx.fill();
+};
+
+FogCanvasLayer.prototype._clearCell = function(ctx, key) {
+    var letter = key[0];
+    var num = parseInt(key.slice(1), 10);
+    var x0 = LETTER_X[letter];
+    var y0 = NUMBER_Y[num];
+    var x1 = x0 + 8;
+    var y1 = y0 - 8;
+    var p0 = this._map.latLngToContainerPoint([y0, x0]);
+    var p1 = this._map.latLngToContainerPoint([y1, x1]);
+    var left = Math.min(p0.x, p1.x);
+    var top = Math.min(p0.y, p1.y);
+    var w = Math.abs(p1.x - p0.x);
+    var h = Math.abs(p1.y - p0.y);
+    ctx.fillRect(left, top, w, h);
+};
+
+FogCanvasLayer.prototype._coverCell = function(ctx, key) {
+    var letter = key[0];
+    var num = parseInt(key.slice(1), 10);
+    var x0 = LETTER_X[letter];
+    var y0 = NUMBER_Y[num];
+    var x1 = x0 + 8;
+    var y1 = y0 - 8;
+    var p0 = this._map.latLngToContainerPoint([y0, x0]);
+    var p1 = this._map.latLngToContainerPoint([y1, x1]);
+    var left = Math.min(p0.x, p1.x);
+    var top = Math.min(p0.y, p1.y);
+    var w = Math.abs(p1.x - p0.x);
+    var h = Math.abs(p1.y - p0.y);
+    ctx.fillRect(left, top, w, h);
+};
+
+FogCanvasLayer.prototype._redraw = function() {
+    this._resize();
+    var ctx = this._canvas.getContext('2d');
+    if (!ctx) return;
+
+    // base: fog totalmente opaco
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+    ctx.fillStyle = '#9aa0a6';
+    ctx.fillRect(0, 0, this._canvas.width, this._canvas.height);
+
+    // abre buracos
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.fillStyle = 'rgba(0,0,0,1)';
+    for (var i = 0; i < this._revealedCircles.length; i++) {
+        var c = this._revealedCircles[i];
+        this._clearCircle(ctx, c.latlng, c.radius);
     }
-}
+    this._revealedCells.forEach(function(key) {
+        this._clearCell(ctx, key);
+    }, this);
 
-window.fogToggleCell = function(rawCoord, discover) {
+    // re-cobre quadrantes forçados
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = '#9aa0a6';
+    this._forcedCoveredCells.forEach(function(key) {
+        this._coverCell(ctx, key);
+    }, this);
+};
+
+FogCanvasLayer.prototype.revealAt = function(latlng, radius) {
+    if (!latlng || !radius) return;
+    this._revealedCircles.push({ latlng: latlng, radius: radius });
+    this._redraw();
+};
+
+FogCanvasLayer.prototype.toggleCell = function(rawCoord, discover) {
     var key = normalizeCoord(rawCoord);
     if (!key) {
         showPopup("Coordenada inválida. Ex: A1, F20");
         return;
     }
-    fogSetCellDiscovered(key, !!discover);
+    if (discover) {
+        this._forcedCoveredCells.delete(key);
+        this._revealedCells.add(key);
+    } else {
+        this._revealedCells.delete(key);
+        this._forcedCoveredCells.add(key);
+    }
+    this._redraw();
 };
 
-window.fogClearAt = function(latlng, radius) {
-    if (!latlng || !radius) return;
-    var r2 = radius * radius;
-    fogCellCenters.forEach(function(center, key) {
-        if (fogDiscovered.has(key)) return;
-        var dx = center.lng - latlng.lng;
-        var dy = center.lat - latlng.lat;
-        if ((dx * dx + dy * dy) <= r2) {
-            fogSetCellDiscovered(key, true);
-        }
-    });
-};
-
-buildFogGrid();
+var fog = new FogCanvasLayer(map).addTo(map);
+window.fogClearAt = function(latlng, radius) { fog.revealAt(latlng, radius); };
+window.fogToggleCell = function(rawCoord, discover) { fog.toggleCell(rawCoord, !!discover); };
 
 
 
@@ -923,6 +979,11 @@ $(function() {
         var titleEl = document.getElementById("main-vessel-title");
         var positionBtn = document.getElementById("main-vessel-position-btn");
         var removeBtn = document.getElementById("main-vessel-remove-btn");
+        var typeSelect = document.getElementById("main-vessel-type");
+        var cannons = document.getElementById("main-vessel-cannons");
+        var deck = document.getElementById("main-vessel-deck");
+        var mast = document.getElementById("main-vessel-mast");
+        var scope = document.getElementById("main-vessel-scope");
 
         if (!positionBtn) return;
 
@@ -948,11 +1009,49 @@ $(function() {
                 if (!mainVesselShip) return;
                 if (map.hasLayer(mainVesselShip)) map.removeLayer(mainVesselShip);
                 // também limpa visão/cones se estiverem ativos
-                mainVesselShip._cannonsEnabled = false;
+                mF.setShipCannonsEnabled(mainVesselShip, false, map);
+                mF.setShipVisionLevel(mainVesselShip, 0, map);
                 enableMainVesselControls(false);
                 refresh();
             });
         }
+
+        // eventos das opções da embarcação (só funcionam quando habilitadas)
+        if (typeSelect) {
+            typeSelect.addEventListener("change", function() {
+                if (!mainVesselShip) return;
+                mF.setShipType(mainVesselShip, typeSelect.value, map);
+            });
+        }
+
+        if (cannons) {
+            cannons.addEventListener("change", function() {
+                if (!mainVesselShip) return;
+                mF.setShipCannonsEnabled(mainVesselShip, cannons.checked, map);
+            });
+        }
+        function syncVisionFromMain() {
+            if (!mainVesselShip) return;
+            var lvl = 0;
+            if (deck && deck.checked) lvl += 1;
+            if (mast && mast.checked) lvl += 1;
+            if (scope && scope.checked) lvl += 1;
+            mF.setShipVisionLevel(mainVesselShip, lvl, map);
+        }
+        if (deck) deck.addEventListener("change", function() {
+            if (deck && !deck.checked) { if (mast) mast.checked = false; if (scope) scope.checked = false; }
+            if (mast && mast.checked && deck && !deck.checked) deck.checked = true;
+            if (scope && scope.checked && deck && !deck.checked) deck.checked = true;
+            syncVisionFromMain();
+        });
+        if (mast) mast.addEventListener("change", function() {
+            if (mast.checked && deck && !deck.checked) deck.checked = true;
+            syncVisionFromMain();
+        });
+        if (scope) scope.addEventListener("change", function() {
+            if (scope.checked && deck && !deck.checked) deck.checked = true;
+            syncVisionFromMain();
+        });
     })();
 
     // botões da barra lateral – navios, inimigos e marcadores
@@ -984,56 +1083,18 @@ $(function() {
     });
 
     // =========================
-    // VENTO (UI)
+    // VENTO (UI) — slider 1..6
     // =========================
     (function setupWindPanel() {
-        var f1 = document.getElementById("wind-force-1");
-        var f2 = document.getElementById("wind-force-2");
-        var f3 = document.getElementById("wind-force-3");
-        var arrow = document.getElementById("wind-arrow");
-        if (!f1 || !f2 || !f3 || !arrow) return;
+        var slider = document.getElementById("wind-strength");
+        var valueEl = document.getElementById("wind-strength-value");
+        if (!slider || !valueEl) return;
 
-        function setForce(level) {
-            f1.checked = level >= 1;
-            f2.checked = level >= 2;
-            f3.checked = level >= 3;
-            var src = "images/markers/seta1_marker.png";
-            if (level === 2) src = "images/markers/seta2_marker.png";
-            if (level === 3) src = "images/markers/seta3_marker.png";
-            arrow.src = src;
+        function render() {
+            valueEl.textContent = String(slider.value);
         }
-
-        f1.addEventListener("change", function() { setForce(f1.checked ? 1 : 0); });
-        f2.addEventListener("change", function() { setForce(f2.checked ? 2 : (f1.checked ? 1 : 0)); });
-        f3.addEventListener("change", function() { setForce(f3.checked ? 3 : (f2.checked ? 2 : (f1.checked ? 1 : 0))); });
-
-        // força padrão: 1
-        setForce(1);
-
-        // rotação com clique+arrasto (LMB)
-        var rotating = false;
-        function onMove(ev) {
-            if (!rotating) return;
-            var r = arrow.getBoundingClientRect();
-            var cx = r.left + r.width / 2;
-            var cy = r.top + r.height / 2;
-            var dx = ev.clientX - cx;
-            var dy = ev.clientY - cy;
-            var deg = Math.atan2(dx, -dy) * 180 / Math.PI; // 0 = norte
-            arrow.style.transform = "rotate(" + deg + "deg)";
-        }
-        function onUp() {
-            rotating = false;
-            document.removeEventListener("mousemove", onMove);
-            document.removeEventListener("mouseup", onUp);
-        }
-        arrow.addEventListener("mousedown", function(ev) {
-            if (ev.button !== 0) return;
-            ev.preventDefault();
-            rotating = true;
-            document.addEventListener("mousemove", onMove);
-            document.addEventListener("mouseup", onUp);
-        });
+        slider.addEventListener("input", render);
+        render();
     })();
 
     // =========================

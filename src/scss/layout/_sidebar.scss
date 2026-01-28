@@ -457,30 +457,30 @@ aside.sidebar {
         gap: 4px;
         margin-top: 6px;
     }
-    .wind-direction {
+    .vessel-group select {
+        width: 100%;
+        margin-top: 4px;
+        padding: 6px;
+        border-radius: 4px;
+        border: 1px solid rgba(255,255,255,0.25);
+        background: rgba(0,0,0,0.25);
+        color: white;
+    }
+    .wind-slider-row {
         display: flex;
         align-items: center;
-        justify-content: space-between;
         gap: 8px;
-        margin-top: 8px;
+        margin-top: 6px;
         color: white;
         font-size: 11px;
     }
-    #wind-arrow {
-        width: 34px;
-        height: 34px;
-        object-fit: contain;
-        transform-origin: 50% 50%;
-        cursor: grab;
-        user-select: none;
+    #wind-strength {
+        flex: 1;
     }
-    #wind-arrow:active { cursor: grabbing; }
-    .wind-force-labels, .wind-force-inputs {
-        display: flex;
-        justify-content: space-between;
-        gap: 6px;
-        color: white;
-        font-size: 11px;
+    #wind-strength-value {
+        width: 18px;
+        text-align: center;
+        font-weight: 600;
     }
     .discovery-row {
         display: flex;
