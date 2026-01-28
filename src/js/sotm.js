@@ -152,7 +152,7 @@ var markersLayer = new L.LayerGroup();
 map.addLayer(markersLayer);
 
 var islandsLayer = new L.LayerGroup();
-layerArray.push(['islands', chickensLayer]);
+layerArray.push(['islands', islandsLayer]);
 map.addLayer(islandsLayer);
 
 var chickensLayer = new L.LayerGroup();
