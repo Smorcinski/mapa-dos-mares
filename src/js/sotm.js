@@ -755,46 +755,54 @@ function adjustIslandsAnchorPointOnZoom(anchorXmodifier){
 	});
 }
 
-document.getElementById("toggle-cannons").onchange = e => {
+const toggleCannons = document.getElementById("toggle-cannons");
 
-    cannonConesEnabled = e.target.checked;
+if (toggleCannons) {
+    toggleCannons.onchange = e => {
 
-    ships.forEach(ship => {
-        if (cannonConesEnabled) {
-            updateCannonCones(ship);
-        } else {
-            removeCannonCones(ship);
-        }
-    });
-};
+        cannonConesEnabled = e.target.checked;
+
+        ships.forEach(ship => {
+            if (cannonConesEnabled) {
+                updateCannonCones(ship);
+            } else {
+                removeCannonCones(ship);
+            }
+        });
+    };
+}
 
 const deck = document.getElementById("vision-deck");
 const mast = document.getElementById("vision-mast");
 const scope = document.getElementById("vision-scope");
 
-deck.onchange = () => {
+if (deck && mast && scope) {
 
-    if (!deck.checked) {
-        mast.checked = false;
-        scope.checked = false;
-        mast.disabled = true;
-        scope.disabled = true;
-        visionLevel = 0;
-    } else {
-        mast.disabled = false;
-        scope.disabled = false;
-        visionLevel = 1;
-    }
+    deck.onchange = () => {
 
-    updateVisionCircle(playerShip);
-};
+        if (!deck.checked) {
+            mast.checked = false;
+            scope.checked = false;
+            mast.disabled = true;
+            scope.disabled = true;
+            visionLevel = 0;
+        } else {
+            mast.disabled = false;
+            scope.disabled = false;
+            visionLevel = 1;
+        }
 
-mast.onchange = scope.onchange = () => {
+        updateVisionCircle(playerShip);
+    };
 
-    visionLevel = 1 + (mast.checked ? 1 : 0) + (scope.checked ? 1 : 0);
+    mast.onchange = scope.onchange = () => {
 
-    updateVisionCircle(playerShip);
-};
+        visionLevel = 1 + (mast.checked ? 1 : 0) + (scope.checked ? 1 : 0);
+
+        updateVisionCircle(playerShip);
+    };
+}
+
 
 
 var popUpInt = 0;
