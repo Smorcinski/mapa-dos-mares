@@ -444,6 +444,59 @@ aside.sidebar {
         }
     }
 
+    // Embarcação / Vento / Descoberta (ajustes rápidos de layout)
+    .vessel-group h3[contenteditable="true"] {
+        outline: none;
+        cursor: text;
+        border-bottom: 1px dashed rgba(255,255,255,0.35);
+        padding-bottom: 2px;
+    }
+    .vessel-options {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-top: 6px;
+    }
+    .wind-direction {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: 8px;
+        color: white;
+        font-size: 11px;
+    }
+    #wind-arrow {
+        width: 34px;
+        height: 34px;
+        object-fit: contain;
+        transform-origin: 50% 50%;
+        cursor: grab;
+        user-select: none;
+    }
+    #wind-arrow:active { cursor: grabbing; }
+    .wind-force-labels, .wind-force-inputs {
+        display: flex;
+        justify-content: space-between;
+        gap: 6px;
+        color: white;
+        font-size: 11px;
+    }
+    .discovery-row {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+    }
+    .discovery-row input {
+        width: 52px;
+        padding: 6px;
+        border-radius: 4px;
+        border: 1px solid rgba(255,255,255,0.25);
+        background: rgba(0,0,0,0.25);
+        color: white;
+        text-transform: uppercase;
+    }
+
 
     .subcontrols {
         a, button {

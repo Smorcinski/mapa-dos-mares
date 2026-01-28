@@ -31,10 +31,31 @@
 
 				<div class="sidebar-scroll">
 				<div class="tool-group vessel-group">
-					<h3>Embarcação</h3>
-					<label for="main-vessel-name">Nome da embarcação</label>
-					<input id="main-vessel-name" type="text" value="Embarcação" />
+					<h3 id="main-vessel-title" contenteditable="true" spellcheck="false">Embarcação</h3>
 					<button id="main-vessel-position-btn">Posicionar Embarcação</button>
+					<button id="main-vessel-remove-btn" disabled>Remover Embarcação</button>
+					<div class="vessel-options">
+						<label><input id="main-vessel-cannons" type="checkbox" disabled /> Alcance dos Canhões</label>
+						<label><input id="main-vessel-deck" type="checkbox" disabled /> Convés</label>
+						<label><input id="main-vessel-mast" type="checkbox" disabled /> Mastro</label>
+						<label><input id="main-vessel-scope" type="checkbox" disabled /> Luneta</label>
+					</div>
+				</div>
+
+				<div class="tool-group wind-group">
+					<h3>Vento</h3>
+					<div class="wind-force">
+						<div class="wind-force-labels"><span>1</span><span>2</span><span>3</span></div>
+						<div class="wind-force-inputs">
+							<input id="wind-force-1" type="checkbox" />
+							<input id="wind-force-2" type="checkbox" />
+							<input id="wind-force-3" type="checkbox" />
+						</div>
+					</div>
+					<div class="wind-direction">
+						<span>Direção do Vento</span>
+						<img id="wind-arrow" src="images/markers/seta1_marker.png" alt="Direção do vento" />
+					</div>
 				</div>
 
 				<div class="tool-group">
@@ -55,6 +76,15 @@
 					<h3>Rotas</h3>
 					<button id="add-route-btn">➕ Adicionar Rota</button>
 					<div id="routes-panel"></div>
+				</div>
+
+				<div class="tool-group discovery-panel">
+					<h3>Descoberta</h3>
+					<div class="discovery-row">
+						<input id="discovery-coord" type="text" maxlength="3" placeholder="A1" />
+						<button id="discovery-btn">Descobrir</button>
+						<button id="cover-btn">Cobrir</button>
+					</div>
 				</div>
 
 				<div class="tool-group subcontrols">

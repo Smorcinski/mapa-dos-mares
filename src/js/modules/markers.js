@@ -173,7 +173,10 @@ function updateVisionCircle(ship, level, map) {
 }
 
 
-function createShip(latLng, map, angle = 0, isEnemy = false) {
+function createShip(latLng, map, angle = 0, isEnemy = false, options = {}) {
+    const createPanel = options.createPanel !== false;
+    const registerShip = options.registerShip !== false;
+    const idOverride = (typeof options.idOverride !== "undefined") ? options.idOverride : null;
 
     const ship = L.marker(latLng, {
         icon: boatMarker,
@@ -183,8 +186,9 @@ function createShip(latLng, map, angle = 0, isEnemy = false) {
     // guarda metadados no próprio marker
     ship._angle = angle;
     ship._isEnemy = isEnemy;
-    ship._id = shipIdCounter++;
+    ship._id = (idOverride !== null ? idOverride : shipIdCounter++);
     ship._visionLevel = 0;
+    ship._fogRadius = 0.7 * 8 * 0.7; // mesmo tamanho do "Convés" (nível 1) atual
 
     if (isEnemy && ship._icon) {
         ship._icon.classList.add("enemy-ship");
@@ -193,12 +197,21 @@ function createShip(latLng, map, angle = 0, isEnemy = false) {
     applyRotation(ship);
     enableShipControls(ship, map);
 
-    createShipPanel(ship, map);
+    if (createPanel) {
+        createShipPanel(ship, map);
+    }
 
-    ships.push(ship);
+    if (registerShip) {
+        ships.push(ship);
+    }
 
     // aplica escala do ícone no zoom atual
     if (map) updateShipsIconScale(map);
+
+    // descobre fog ao nascer
+    if (typeof window.fogClearAt === "function") {
+        window.fogClearAt(ship.getLatLng(), ship._fogRadius);
+    }
 
     return ship;
 }
@@ -443,6 +456,7 @@ function enableShipControls(ship, map) {
 
             if (ship._visionCircle) ship._visionCircle.setLatLng(to);
             if (ship._cannonsEnabled) updateCannonCones(ship, map);
+            if (ship._fogRadius && typeof window.fogClearAt === "function") window.fogClearAt(to, ship._fogRadius);
 
 			updateShipTrail(ship, to, map);
 		}
@@ -648,6 +662,10 @@ function addShipFromContext(e, map) {
     return createShip(e.latlng, map, 0);
 }
 
+function createMainVesselFromContext(e, map) {
+    return createShip(e.latlng, map, 0, false, { createPanel: false, idOverride: "MAIN" });
+}
+
 function createTrailDot(latLng, map, color) {
     return L.circleMarker(latLng, {
         radius: 5,
@@ -733,6 +751,7 @@ export {
     setQstring,
 	addShipFromContext,
 	addEnemyFromContext,
+    createMainVesselFromContext,
     enableDeleteMode,
     removeShip
 };

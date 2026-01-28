@@ -137,6 +137,101 @@ var layer = L.tileLayer(cdnpath + "images/tiles/v3.6/{z}/{x}/{y}.png", {
     tms: !1
 }).addTo(map);
 
+// =========================
+// FOG OF WAR (Descoberta)
+// =========================
+map.createPane('fogPane');
+map.getPane('fogPane').style.zIndex = 450; // acima do tile, abaixo de markers
+
+var fogLayer = L.layerGroup().addTo(map);
+var fogCells = new Map(); // "A1" => L.rectangle
+var fogDiscovered = new Set(); // "A1"
+var fogCellCenters = new Map(); // "A1" => {lat,lng}
+
+// Tabelas compatíveis com o graticule (L.SimpleGraticule-sot.js)
+var LETTER_X = {
+    A:0,B:8,C:16,D:24,E:32,F:41,G:49,H:57,I:65,J:73,K:82,L:90,M:98,N:106,O:114,P:123,Q:131,R:139,S:147,T:155,U:164,V:172,W:180,X:188,Y:196,Z:205
+};
+var NUMBER_Y = {
+    1:0,2:-8,3:-16,4:-24,5:-31,6:-39,7:-47,8:-54,9:-62,10:-70,11:-77,12:-85,13:-93,14:-101,15:-108,16:-116,17:-124,18:-131,19:-139,20:-147,21:-154,22:-162,23:-170,24:-178,25:-185,26:-193
+};
+
+function normalizeCoord(raw) {
+    if (!raw) return null;
+    var s = String(raw).trim().toUpperCase();
+    var m = s.match(/^([A-Z])\s*(\d{1,2})$/);
+    if (!m) return null;
+    var letter = m[1];
+    var num = parseInt(m[2], 10);
+    if (!LETTER_X[letter]) {
+        if (letter !== 'A') return null; // A é 0 (falsy)
+    }
+    if (!NUMBER_Y.hasOwnProperty(num)) return null;
+    return letter + String(num);
+}
+
+function buildFogGrid() {
+    // cria retângulos só dentro de um range razoável (A..Z, 1..26)
+    Object.keys(LETTER_X).forEach(function(letter) {
+        Object.keys(NUMBER_Y).forEach(function(nStr) {
+            var n = parseInt(nStr, 10);
+            var key = letter + String(n);
+            var x0 = LETTER_X[letter];
+            var y0 = NUMBER_Y[n];
+            var x1 = x0 + 8;
+            var y1 = y0 - 8;
+            var rect = L.rectangle([[y0, x0], [y1, x1]], {
+                stroke: false,
+                fillColor: "#9aa0a6",
+                fillOpacity: 0.65,
+                interactive: false,
+                pane: "fogPane"
+            });
+            fogCells.set(key, rect);
+            fogCellCenters.set(key, { lat: (y0 + y1) / 2, lng: (x0 + x1) / 2 });
+            fogLayer.addLayer(rect);
+        });
+    });
+}
+
+function fogSetCellDiscovered(key, discovered) {
+    var rect = fogCells.get(key);
+    if (!rect) return;
+    if (discovered) {
+        if (fogDiscovered.has(key)) return;
+        fogDiscovered.add(key);
+        fogLayer.removeLayer(rect);
+    } else {
+        if (!fogDiscovered.has(key)) return;
+        fogDiscovered.delete(key);
+        fogLayer.addLayer(rect);
+    }
+}
+
+window.fogToggleCell = function(rawCoord, discover) {
+    var key = normalizeCoord(rawCoord);
+    if (!key) {
+        showPopup("Coordenada inválida. Ex: A1, F20");
+        return;
+    }
+    fogSetCellDiscovered(key, !!discover);
+};
+
+window.fogClearAt = function(latlng, radius) {
+    if (!latlng || !radius) return;
+    var r2 = radius * radius;
+    fogCellCenters.forEach(function(center, key) {
+        if (fogDiscovered.has(key)) return;
+        var dx = center.lng - latlng.lng;
+        var dy = center.lat - latlng.lat;
+        if ((dx * dx + dy * dy) <= r2) {
+            fogSetCellDiscovered(key, true);
+        }
+    });
+};
+
+buildFogGrid();
+
 
 
 
@@ -166,27 +261,20 @@ function onMapClick(e) {
     }
 
     if (pendingPlacement === 'mainShip') {
-        var vesselNameInput = document.getElementById("main-vessel-name");
-        var name = vesselNameInput && vesselNameInput.value.trim() ? vesselNameInput.value.trim() : "Embarcação";
+        var titleEl = document.getElementById("main-vessel-title");
+        var name = titleEl && titleEl.textContent.trim() ? titleEl.textContent.trim() : "Embarcação";
 
         if (mainVesselShip) {
-            // reposiciona a embarcação existente
             mainVesselShip.setLatLng(e.latlng);
-            if (!map.hasLayer(mainVesselShip)) {
-                mainVesselShip.addTo(map);
-            }
+            if (!map.hasLayer(mainVesselShip)) mainVesselShip.addTo(map);
         } else {
-            // cria uma nova embarcação aliada normal
-            mainVesselShip = mF.addShipFromContext({ latlng: e.latlng }, map);
+            mainVesselShip = mF.createMainVesselFromContext({ latlng: e.latlng }, map);
         }
 
-        // atualiza o título do bloco lateral desse navio para o nome da embarcação
-        if (mainVesselShip._panelEl) {
-            var titleEl = mainVesselShip._panelEl.querySelector("h4");
-            if (titleEl) {
-                titleEl.textContent = name;
-            }
-        }
+        // habilita opções quando posicionada
+        enableMainVesselControls(true);
+
+        updateMainVesselButtons(name, true);
 
         pendingPlacement = null;
         hidePopup();
@@ -804,32 +892,67 @@ $(function() {
 			};
 		};
 
+    function getMainVesselName() {
+        var titleEl = document.getElementById("main-vessel-title");
+        var name = titleEl && titleEl.textContent.trim() ? titleEl.textContent.trim() : "Embarcação";
+        return name;
+    }
+
+    function updateMainVesselButtons(name, isPositioned) {
+        var positionBtn = document.getElementById("main-vessel-position-btn");
+        var removeBtn = document.getElementById("main-vessel-remove-btn");
+        if (positionBtn) positionBtn.textContent = "Posicionar " + name;
+        if (removeBtn) {
+            removeBtn.textContent = "Remover " + name;
+            removeBtn.disabled = !isPositioned;
+        }
+    }
+
+    function enableMainVesselControls(enabled) {
+        var ids = ["main-vessel-cannons", "main-vessel-deck", "main-vessel-mast", "main-vessel-scope"];
+        ids.forEach(function(id) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            el.disabled = !enabled;
+            if (!enabled) el.checked = false;
+        });
+    }
+
     // Painel de embarcação principal
     (function setupMainVesselPanel() {
-        var vesselNameInput = document.getElementById("main-vessel-name");
-        var vesselBtn = document.getElementById("main-vessel-position-btn");
+        var titleEl = document.getElementById("main-vessel-title");
+        var positionBtn = document.getElementById("main-vessel-position-btn");
+        var removeBtn = document.getElementById("main-vessel-remove-btn");
 
-        if (!vesselBtn) return;
+        if (!positionBtn) return;
 
-        function getName() {
-            if (!vesselNameInput) return "Embarcação";
-            var v = vesselNameInput.value.trim();
-            return v || "Embarcação";
+        function refresh() {
+            updateMainVesselButtons(getMainVesselName(), !!(mainVesselShip && map.hasLayer(mainVesselShip)));
         }
 
-        function updateBtnLabel() {
-            vesselBtn.textContent = "Posicionar " + getName();
+        enableMainVesselControls(false);
+        refresh();
+
+        if (titleEl) {
+            titleEl.addEventListener("input", refresh);
+            titleEl.addEventListener("blur", refresh);
         }
 
-        updateBtnLabel();
-        if (vesselNameInput) {
-            vesselNameInput.addEventListener("input", updateBtnLabel);
-        }
-
-        vesselBtn.addEventListener("click", function() {
+        positionBtn.addEventListener("click", function() {
             pendingPlacement = 'mainShip';
-            showPopup("Clique no mapa para posicionar " + getName() + ".");
+            showPopup("Clique no mapa para posicionar " + getMainVesselName() + ".");
         });
+
+        if (removeBtn) {
+            removeBtn.addEventListener("click", function() {
+                if (!mainVesselShip) return;
+                if (map.hasLayer(mainVesselShip)) map.removeLayer(mainVesselShip);
+                // também limpa visão/cones se estiverem ativos
+                mainVesselShip._cannonsEnabled = false;
+                enableMainVesselControls(false);
+                refresh();
+            });
+        }
     })();
 
     // botões da barra lateral – navios, inimigos e marcadores
@@ -859,6 +982,78 @@ $(function() {
         mF.enableDeleteMode();
         showPopup("Clique em um marcador ou navio para apagá-lo.");
     });
+
+    // =========================
+    // VENTO (UI)
+    // =========================
+    (function setupWindPanel() {
+        var f1 = document.getElementById("wind-force-1");
+        var f2 = document.getElementById("wind-force-2");
+        var f3 = document.getElementById("wind-force-3");
+        var arrow = document.getElementById("wind-arrow");
+        if (!f1 || !f2 || !f3 || !arrow) return;
+
+        function setForce(level) {
+            f1.checked = level >= 1;
+            f2.checked = level >= 2;
+            f3.checked = level >= 3;
+            var src = "images/markers/seta1_marker.png";
+            if (level === 2) src = "images/markers/seta2_marker.png";
+            if (level === 3) src = "images/markers/seta3_marker.png";
+            arrow.src = src;
+        }
+
+        f1.addEventListener("change", function() { setForce(f1.checked ? 1 : 0); });
+        f2.addEventListener("change", function() { setForce(f2.checked ? 2 : (f1.checked ? 1 : 0)); });
+        f3.addEventListener("change", function() { setForce(f3.checked ? 3 : (f2.checked ? 2 : (f1.checked ? 1 : 0))); });
+
+        // força padrão: 1
+        setForce(1);
+
+        // rotação com clique+arrasto (LMB)
+        var rotating = false;
+        function onMove(ev) {
+            if (!rotating) return;
+            var r = arrow.getBoundingClientRect();
+            var cx = r.left + r.width / 2;
+            var cy = r.top + r.height / 2;
+            var dx = ev.clientX - cx;
+            var dy = ev.clientY - cy;
+            var deg = Math.atan2(dx, -dy) * 180 / Math.PI; // 0 = norte
+            arrow.style.transform = "rotate(" + deg + "deg)";
+        }
+        function onUp() {
+            rotating = false;
+            document.removeEventListener("mousemove", onMove);
+            document.removeEventListener("mouseup", onUp);
+        }
+        arrow.addEventListener("mousedown", function(ev) {
+            if (ev.button !== 0) return;
+            ev.preventDefault();
+            rotating = true;
+            document.addEventListener("mousemove", onMove);
+            document.addEventListener("mouseup", onUp);
+        });
+    })();
+
+    // =========================
+    // DESCOBERTA (FOG)
+    // =========================
+    (function setupDiscoveryPanel() {
+        var input = document.getElementById("discovery-coord");
+        var discoverBtn = document.getElementById("discovery-btn");
+        var coverBtn = document.getElementById("cover-btn");
+        if (!input || !discoverBtn || !coverBtn) return;
+
+        discoverBtn.addEventListener("click", function() {
+            if (typeof window.fogToggleCell !== "function") return;
+            window.fogToggleCell(input.value, true);
+        });
+        coverBtn.addEventListener("click", function() {
+            if (typeof window.fogToggleCell !== "function") return;
+            window.fogToggleCell(input.value, false);
+        });
+    })();
 
 
     pList.buildPlaceList();
