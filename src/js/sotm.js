@@ -43,8 +43,8 @@ var currentSearchIsland = -1;
 var compassDragStart = null;
 var compassDragging = false;
 
-// modo de posicionamento de navios/inimigos via clique no mapa
-// valores possíveis: null | 'ship' | 'enemy'
+// modo de posicionamento via clique no mapa
+// valores possíveis: null | 'ship' | 'enemy' | 'marker'
 var pendingPlacement = null;
 
 
@@ -115,6 +115,13 @@ var layer = L.tileLayer(cdnpath + "images/tiles/v3.6/{z}/{x}/{y}.png", {
 
 function onMapClick(e) {
     console.log("You clicked the map at " + e.latlng);
+
+    if (pendingPlacement === 'marker') {
+        mF.addXmark(e.latlng, map);
+        mF.setQstring();
+        pendingPlacement = null;
+        return;
+    }
 
     if (pendingPlacement === 'ship') {
         mF.addShipFromContext({ latlng: e.latlng }, map);
@@ -620,53 +627,6 @@ var customOptions =
 
 var popup = L.popup(customOptions);
 
-map.on('contextmenu', function(e) {
-    var myLoc = e.latlng;
-    popup
-        .setLatLng(e.latlng)
-        .setContent(`
-		<ul>
-			<li class='js-addMarker'>Adicionar Marcador</li>
-			<li class='js-addShip'>Adicionar Navio</li>
-			<li class='js-addEnemy'>Adicionar Inimigo</li>
-			<li class='js-clearMarkers'>Limpar Marcadores</li>
-		</ul>
-`)
-        .openOn(map);
-
-    $(".js-addMarker").click(function() {
-        mF.addXmark(myLoc, map);
-        mF.setQstring();
-        map.closePopup();
-    });
-
-    $(".js-clearMarkers").click(function() {
-        mF.clearXmarks(map);
-        mF.clearComp(map);
-        hidePopup();
-        mF.setQstring();
-        map.closePopup();
-    });
-	
-	$(".js-addShip").click(function(){
-        // ativa modo de posicionamento de navio no próximo clique no mapa
-        pendingPlacement = 'ship';
-        map.closePopup();
-        showPopup("Clique no mapa para adicionar um navio.");
-    });
-
-	$(".js-addEnemy").click(function(){
-        // ativa modo de posicionamento de inimigo no próximo clique no mapa
-        pendingPlacement = 'enemy';
-        map.closePopup();
-        showPopup("Clique no mapa para adicionar um inimigo.");
-	});
-
-    
-
-});
-
-
 function showPopup(words) {
     $('.floating_dialog').html(words).addClass("show");
 }
@@ -839,6 +799,29 @@ $(function() {
 				routes.startRouteDrawing(map);
 			};
 		};
+
+    // botões da barra lateral – navios, inimigos e marcadores
+    $(".js-addShip").click(function() {
+        pendingPlacement = 'ship';
+        showPopup("Clique no mapa para adicionar um navio.");
+    });
+
+    $(".js-addEnemy").click(function() {
+        pendingPlacement = 'enemy';
+        showPopup("Clique no mapa para adicionar um inimigo.");
+    });
+
+    $(".js-addMarker").click(function() {
+        pendingPlacement = 'marker';
+        showPopup("Clique no mapa para adicionar um marcador.");
+    });
+
+    $(".js-clearMarkers").click(function() {
+        mF.clearXmarks(map);
+        mF.clearComp(map);
+        hidePopup();
+        mF.setQstring();
+    });
 
 
     pList.buildPlaceList();
