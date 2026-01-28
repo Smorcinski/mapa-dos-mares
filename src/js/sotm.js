@@ -50,6 +50,9 @@ var pendingPlacement = null;
 // contador para nomear navios / inimigos nos painéis
 var shipCounter = 0;
 
+// referência especial para a embarcação principal (painel dedicado)
+var mainVesselShip = null;
+
 
 
 //console.log("-- detect isOnline: " + isOnline);
@@ -157,6 +160,34 @@ function onMapClick(e) {
 
     if (pendingPlacement === 'enemy') {
         mF.addEnemyFromContext({ latlng: e.latlng }, map);
+        pendingPlacement = null;
+        hidePopup();
+        return;
+    }
+
+    if (pendingPlacement === 'mainShip') {
+        var vesselNameInput = document.getElementById("main-vessel-name");
+        var name = vesselNameInput && vesselNameInput.value.trim() ? vesselNameInput.value.trim() : "Embarcação";
+
+        if (mainVesselShip) {
+            // reposiciona a embarcação existente
+            mainVesselShip.setLatLng(e.latlng);
+            if (!map.hasLayer(mainVesselShip)) {
+                mainVesselShip.addTo(map);
+            }
+        } else {
+            // cria uma nova embarcação aliada normal
+            mainVesselShip = mF.addShipFromContext({ latlng: e.latlng }, map);
+        }
+
+        // atualiza o título do bloco lateral desse navio para o nome da embarcação
+        if (mainVesselShip._panelEl) {
+            var titleEl = mainVesselShip._panelEl.querySelector("h4");
+            if (titleEl) {
+                titleEl.textContent = name;
+            }
+        }
+
         pendingPlacement = null;
         hidePopup();
         return;
@@ -772,6 +803,34 @@ $(function() {
 				routes.startRouteDrawing(map);
 			};
 		};
+
+    // Painel de embarcação principal
+    (function setupMainVesselPanel() {
+        var vesselNameInput = document.getElementById("main-vessel-name");
+        var vesselBtn = document.getElementById("main-vessel-position-btn");
+
+        if (!vesselBtn) return;
+
+        function getName() {
+            if (!vesselNameInput) return "Embarcação";
+            var v = vesselNameInput.value.trim();
+            return v || "Embarcação";
+        }
+
+        function updateBtnLabel() {
+            vesselBtn.textContent = "Posicionar " + getName();
+        }
+
+        updateBtnLabel();
+        if (vesselNameInput) {
+            vesselNameInput.addEventListener("input", updateBtnLabel);
+        }
+
+        vesselBtn.addEventListener("click", function() {
+            pendingPlacement = 'mainShip';
+            showPopup("Clique no mapa para posicionar " + getName() + ".");
+        });
+    })();
 
     // botões da barra lateral – navios, inimigos e marcadores
     $(".js-addShip").click(function() {

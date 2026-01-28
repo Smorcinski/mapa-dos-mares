@@ -411,13 +411,6 @@ function enableShipControls(ship, map) {
             return;
         }
 
-		if (e.originalEvent.shiftKey && ship._isEnemy) {
-
-			removeShip(ship, map);
-
-			return;
-		}
-
 	});
 
 
@@ -678,7 +671,7 @@ function updateShipTrail(ship, latlng, map) {
     if (!ship._trail) ship._trail = [];
     if (!ship._lastTrailPos) ship._lastTrailPos = latlng;
 
-    const minDist = 1; // controle do espaçamento entre bolinhas
+    const minDist = 0.6; // controle do espaçamento entre bolinhas (ligeiramente mais próximas)
 
     if (distance(ship._lastTrailPos, latlng) < minDist) return;
 
