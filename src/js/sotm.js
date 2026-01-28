@@ -177,8 +177,8 @@ layerArray.push(['pigs', pigsLayer]);
  //use circlemarker?
 
 var chicken_marker = L.icon({
-    iconUrl: '/images/markers/chicken_marker.png',
-    shadowUrl: '/images/markers/chicken_marker.png',
+    iconUrl: 'images/markers/chicken_marker.png',
+    shadowUrl: 'images/markers/chicken_marker.png',
 
     iconSize:     [30, 30], // size of the icon
     shadowSize:   [0, 0], // size of the shadow
@@ -189,8 +189,8 @@ var chicken_marker = L.icon({
 
 
 var snake_marker = L.icon({
-    iconUrl: '/images/markers/snake_marker.png',
-    shadowUrl: '/images/markers/snake_marker.png',
+    iconUrl: 'images/markers/snake_marker.png',
+    shadowUrl: 'images/markers/snake_marker.png',
 
     iconSize:     [30, 30], // size of the icon
     shadowSize:   [0, 0], // size of the shadow
@@ -199,8 +199,8 @@ var snake_marker = L.icon({
     popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
 });
 var pig_marker = L.icon({
-    iconUrl: '/images/markers/pig_marker.png',
-    shadowUrl: '/images/markers/pig_marker.png',
+    iconUrl: 'images/markers/pig_marker.png',
+    shadowUrl: 'images/markers/pig_marker.png',
 
     iconSize:     [30, 30], // size of the icon
     shadowSize:   [0, 0], // size of the shadow
@@ -256,7 +256,7 @@ for(var i in islands) {
     }).addTo(islandsLayer);
     /*
 	islandMarker.bindPopup('<div class="lf-popup">'+
-							'<img src="/images/screenshots/small/'+((typeof islands[i].img != 'undefined')?islands[i].img :'bientot.jpg')+'" />'+
+							'<img src="images/screenshots/small/'+((typeof islands[i].img != 'undefined')?islands[i].img :'bientot.jpg')+'" />'+
 							'<span class="popup-title-island">'+islands[i].title+'</span>'+
 							'<span class="popup-type-island">'+islands[i].type+'</span>'+
 							'<span class="popup-img-island hiddenDiv">'+((typeof islands[i].img != 'undefined')?islands[i].img :'bientot.jpg')+'</span>'+
@@ -293,19 +293,19 @@ for(var i in islands) {
 				modal.style.display = "none";
 			}
 		}
-		img.src = "/images/screenshots/medium/" + document.getElementsByClassName("popup-img-island")[0].innerHTML;
+		img.src = "images/screenshots/medium/" + document.getElementsByClassName("popup-img-island")[0].innerHTML;
 		titre.innerHTML = document.getElementsByClassName("popup-title-island")[0].innerHTML;
 		type.innerHTML = document.getElementsByClassName("popup-type-island")[0].innerHTML;
 		
 		$('#islandModalAnimals').html("");
 		if(document.getElementsByClassName("popup-hasChickens-island")[0].innerHTML == "O"){
-			$('#islandModalAnimals').append('<div class="animal-box"><img src="/images/animal-info-box/chicken-icon-small.png" /></div>');
+			$('#islandModalAnimals').append('<div class="animal-box"><img src="images/animal-info-box/chicken-icon-small.png" /></div>');
 		}
 		if(document.getElementsByClassName("popup-hasPigs-island")[0].innerHTML == "O"){
-			$('#islandModalAnimals').append('<div class="animal-box"><img src="/images/animal-info-box/pig-icon-white.png" height="20" /></div>');
+			$('#islandModalAnimals').append('<div class="animal-box"><img src="images/animal-info-box/pig-icon-white.png" height="20" /></div>');
 		}
 		if(document.getElementsByClassName("popup-hasSnakes-island")[0].innerHTML == "O"){
-			$('#islandModalAnimals').append('<div class="animal-box"><img src="/images/animal-info-box/snake-icon-white-small.png" /></div>');
+			$('#islandModalAnimals').append('<div class="animal-box"><img src="images/animal-info-box/snake-icon-white-small.png" /></div>');
 		}
 		
 		this.closePopup();
@@ -486,7 +486,7 @@ for(var t in places) {
     var popUpHTML = '<div class="lf-popup">'+
     '<h3 class="pop_title">' + mkr.title + '</h3><p>' + mkr.desc + '</p>';
     if (places[t].image) {
-        popUpHTML +='<img src="/images/screenshots/' + places[t].image + '" class="popup_screenshot js-show-large-screenshot"/>';
+        popUpHTML +='<img src="images/screenshots/' + places[t].image + '" class="popup_screenshot js-show-large-screenshot"/>';
     }
     popUpHTML += '</div>';
 
