@@ -47,6 +47,9 @@ var compassDragging = false;
 // valores possíveis: null | 'ship' | 'enemy' | 'marker'
 var pendingPlacement = null;
 
+// contador para nomear navios / inimigos nos painéis
+var shipCounter = 0;
+
 
 
 //console.log("-- detect isOnline: " + isOnline);
@@ -124,13 +127,15 @@ function onMapClick(e) {
     }
 
     if (pendingPlacement === 'ship') {
-        mF.addShipFromContext({ latlng: e.latlng }, map);
+        var ship = mF.addShipFromContext({ latlng: e.latlng }, map);
+        createShipPanel(ship, false);
         pendingPlacement = null;
         return;
     }
 
     if (pendingPlacement === 'enemy') {
-        mF.addEnemyFromContext({ latlng: e.latlng }, map);
+        var enemyShip = mF.addEnemyFromContext({ latlng: e.latlng }, map);
+        createShipPanel(enemyShip, true);
         pendingPlacement = null;
         return;
     }
@@ -733,61 +738,6 @@ function adjustIslandsAnchorPointOnZoom(anchorXmodifier){
 		marker.setIcon(icon);
 	});
 }
-
-const toggleCannons = document.getElementById("toggle-cannons");
-
-	if (toggleCannons) {
-		toggleCannons.onchange = e => {
-
-			cannonConesEnabled = e.target.checked;
-
-			if (typeof ships !== "undefined") {
-				ships.forEach(ship => {
-					if (cannonConesEnabled) {
-						updateCannonCones(ship);
-					} else {
-						removeCannonCones(ship);
-					}
-				});
-			}
-		};
-	}
-
-
-	const deck = document.getElementById("vision-deck");
-	const mast = document.getElementById("vision-mast");
-	const scope = document.getElementById("vision-scope");
-
-	if (deck && mast && scope && typeof playerShip !== "undefined") {
-
-		deck.onchange = () => {
-
-			if (!deck.checked) {
-				mast.checked = false;
-				scope.checked = false;
-				mast.disabled = true;
-				scope.disabled = true;
-				visionLevel = 0;
-			} else {
-				mast.disabled = false;
-				scope.disabled = false;
-				visionLevel = 1;
-			}
-
-			updateVisionCircle(playerShip);
-		};
-
-		mast.onchange = scope.onchange = () => {
-
-			visionLevel = 1 + (mast.checked ? 1 : 0) + (scope.checked ? 1 : 0);
-
-			updateVisionCircle(playerShip);
-		};
-}
-
-
-
-
 
 var popUpInt = 0;
 $(function() {

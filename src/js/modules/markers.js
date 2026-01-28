@@ -1,12 +1,13 @@
 let cannonConesEnabled = false;
 let cannonCones = new Map(); // shipId => {left, right}
-let visionCircle = null;
-let visionLevel = 0; // 0 = nenhum | 1 = convés | 2 = mastro | 3 = luneta
 
 var xMarkers = [];
 var ships = [];
 
-// modo de exclusão pontual (apagar 1 navio / 1 marcador)
+// ids incrementais para identificar navios no painel
+var shipIdCounter = 1;
+
+// modo de exclusão pontual (apagar 1 navio / 1 marcador / 1 inimigo)
 var deleteMode = false;
 
 
@@ -147,18 +148,18 @@ var xmarksspot = L.icon({
 });
 */
 
-function updateVisionCircle(ship) {
+function updateVisionCircle(ship, level, map) {
 
-    if (visionCircle) {
-        visionCircle.remove();
-        visionCircle = null;
+    if (ship._visionCircle) {
+        map.removeLayer(ship._visionCircle);
+        ship._visionCircle = null;
     }
 
-    if (visionLevel === 0) return;
+    if (!level || level <= 0) return;
 
-    const radiusUnits = visionLevel * 0.7 * 8;
+    const radiusUnits = level * 0.7 * 8;
 
-    visionCircle = L.circle(ship.marker.getLatLng(), {
+    ship._visionCircle = L.circle(ship.getLatLng(), {
         radius: radiusUnits,
         color: "white",
         fillColor: "white",
@@ -180,6 +181,8 @@ function createShip(latLng, map, angle = 0, isEnemy = false) {
     // guarda metadados no próprio marker
     ship._angle = angle;
     ship._isEnemy = isEnemy;
+    ship._id = shipIdCounter++;
+    ship._visionLevel = 0;
 
     if (isEnemy && ship._icon) {
         ship._icon.classList.add("enemy-ship");
@@ -188,13 +191,15 @@ function createShip(latLng, map, angle = 0, isEnemy = false) {
     applyRotation(ship);
     enableShipControls(ship, map);
 
+    createShipPanel(ship, map);
+
     ships.push(ship);
 
     return ship;
 }
 
 function addEnemyFromContext(e, map) {
-    createShip(e.latlng, map, 0, true);
+    return createShip(e.latlng, map, 0, true);
 }
 
 var boatMarker = L.icon({
@@ -216,6 +221,107 @@ var xmarksspot = L.icon({
 });
 
 
+function createShipPanel(ship, map) {
+
+    const panel = document.getElementById("ships-panel");
+    if (!panel) return;
+
+    const block = document.createElement("div");
+    block.className = "ship-block " + (ship._isEnemy ? "enemy" : "ally");
+
+    const title = document.createElement("h4");
+    title.textContent = ship._isEnemy ? `Inimigo ${ship._id}` : `Navio ${ship._id}`;
+    block.appendChild(title);
+
+    // checkbox de canhões (para todos)
+    const cannonsLabel = document.createElement("label");
+    const cannonsInput = document.createElement("input");
+    cannonsInput.type = "checkbox";
+    cannonsInput.checked = false;
+    cannonsLabel.appendChild(cannonsInput);
+    cannonsLabel.appendChild(document.createTextNode("Canhões ativos"));
+    block.appendChild(cannonsLabel);
+
+    cannonsInput.onchange = () => {
+        ship._cannonsEnabled = cannonsInput.checked;
+        if (ship._cannonsEnabled) {
+            updateCannonCones(ship);
+        } else {
+            removeCannonCones(ship);
+        }
+    };
+
+    // visão só para navios aliados
+    if (!ship._isEnemy) {
+        const deckLabel = document.createElement("label");
+        const deckInput = document.createElement("input");
+        deckInput.type = "checkbox";
+        deckLabel.appendChild(deckInput);
+        deckLabel.appendChild(document.createTextNode("Convés"));
+        block.appendChild(deckLabel);
+
+        const mastLabel = document.createElement("label");
+        const mastInput = document.createElement("input");
+        mastInput.type = "checkbox";
+        mastLabel.appendChild(mastInput);
+        mastLabel.appendChild(document.createTextNode("Mastro"));
+        block.appendChild(mastLabel);
+
+        const scopeLabel = document.createElement("label");
+        const scopeInput = document.createElement("input");
+        scopeInput.type = "checkbox";
+        scopeLabel.appendChild(scopeInput);
+        scopeLabel.appendChild(document.createTextNode("Luneta"));
+        block.appendChild(scopeLabel);
+
+        function syncVision() {
+            let level = 0;
+            if (deckInput.checked) level += 1;
+            if (mastInput.checked) level += 1;
+            if (scopeInput.checked) level += 1;
+            ship._visionLevel = level; // 0, 1, 2 ou 3
+            updateVisionCircle(ship, level, map);
+        }
+
+        deckInput.onchange = () => {
+            if (!deckInput.checked) {
+                mastInput.checked = false;
+                scopeInput.checked = false;
+            }
+            syncVision();
+        };
+
+        mastInput.onchange = () => {
+            if (mastInput.checked && !deckInput.checked) {
+                deckInput.checked = true;
+            }
+            syncVision();
+        };
+
+        scopeInput.onchange = () => {
+            if (scopeInput.checked && !deckInput.checked) {
+                deckInput.checked = true;
+            }
+            syncVision();
+        };
+
+        ship._visionControls = { deckInput, mastInput, scopeInput };
+    }
+
+    // botão remover (extra, além dos modos de delete já existentes)
+    const removeBtn = document.createElement("button");
+    removeBtn.textContent = "Remover navio";
+    removeBtn.onclick = () => {
+        removeShip(ship, map);
+    };
+    block.appendChild(removeBtn);
+
+    ship._panelEl = block;
+
+    panel.appendChild(block);
+}
+
+
 function removeShip(ship, map) {
 
     // remove rastro de bolinhas, se existir
@@ -225,17 +331,28 @@ function removeShip(ship, map) {
     }
 
     // remove cones de canhão, se estiverem ativos
-    if (cannonCones && ship.id && cannonCones.has(ship.id)) {
-        const cones = cannonCones.get(ship.id);
+    if (cannonCones && ship._id && cannonCones.has(ship._id)) {
+        const cones = cannonCones.get(ship._id);
         if (cones.left) cones.left.remove();
         if (cones.right) cones.right.remove();
-        cannonCones.delete(ship.id);
+        cannonCones.delete(ship._id);
     }
 
-    // se este navio estiver ligado ao círculo de visão, limpa o círculo
-    if (typeof playerShip !== "undefined" && ship === playerShip && visionCircle) {
-        visionCircle.remove();
-        visionCircle = null;
+    // remove círculos individuais de visão / canhão, se existirem
+    if (ship._visionCircle) {
+        map.removeLayer(ship._visionCircle);
+        ship._visionCircle = null;
+    }
+
+    if (ship._cannonCircle) {
+        map.removeLayer(ship._cannonCircle);
+        ship._cannonCircle = null;
+    }
+
+    // remove painel lateral, se existir
+    if (ship._panelEl && ship._panelEl.parentNode) {
+        ship._panelEl.parentNode.removeChild(ship._panelEl);
+        ship._panelEl = null;
     }
 
     map.removeLayer(ship);
@@ -287,6 +404,14 @@ function enableShipControls(ship, map) {
 		
 			ship.setLatLng(to);
 
+            // move elementos vinculados ao navio
+            if (ship._visionCircle) {
+                ship._visionCircle.setLatLng(to);
+            }
+            if (ship._cannonCircle) {
+                ship._cannonCircle.setLatLng(to);
+            }
+
 			const angle = calculateAngle(from, to);
 			ship._angle = angle;
 			applyRotation(ship);
@@ -294,8 +419,6 @@ function enableShipControls(ship, map) {
 			updateShipTrail(ship, to, map);
 			updateCannonCones(ship);
 			updateVisionCircle(playerShip);
-
-
 		}
 
 
@@ -318,15 +441,15 @@ function enableShipControls(ship, map) {
 
 function updateCannonCones(ship) {
 
-    if (!cannonConesEnabled) return;
+    if (!ship._cannonsEnabled) return;
 
     removeCannonCones(ship);
 
-    const color = ship.isEnemy ? "rgba(255,255,0,0.5)" : "rgba(0,255,0,0.5)";
+    const color = ship._isEnemy ? "rgba(255,255,0,0.5)" : "rgba(0,255,0,0.5)";
 
     const cones = createCannonCones(ship, map, color);
 
-    cannonCones.set(ship.id, cones);
+    cannonCones.set(ship._id, cones);
 }
 
 
@@ -478,7 +601,7 @@ function keepRotationOnZoom(map) {
 }
 
 function addShipFromContext(e, map) {
-    createShip(e.latlng, map, 0);
+    return createShip(e.latlng, map, 0);
 }
 
 function createTrailDot(latLng, map, color) {
@@ -523,8 +646,8 @@ function updateShipTrail(ship, latlng, map) {
 
 function createCannonCones(ship, map, color) {
 
-    const center = ship.marker.getLatLng();
-    const angle = ship.angle; // rotação do navio em graus
+    const center = ship.getLatLng();
+    const angle = ship._angle || 0; // rotação do navio em graus
 
     const length = 200;
     const width = 60;
@@ -586,5 +709,6 @@ export {
     setQstring,
 	addShipFromContext,
 	addEnemyFromContext,
-    enableDeleteMode
+    enableDeleteMode,
+    removeShip
 };

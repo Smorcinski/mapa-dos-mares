@@ -282,6 +282,8 @@ aside.sidebar {
 
     .sotm_logo {
         width: 70%;
+        display: block;
+        margin: 10px auto 16px auto;
     }
 
     .icons {
@@ -408,6 +410,30 @@ aside.sidebar {
         } */
     }
 
+    .tool-group {
+        text-align: left;
+        padding: 6px 8px 10px 8px;
+        margin: 6px 8px;
+        background: rgba(0, 0, 0, 0.25); // caixa mais escura para separar seções
+        border-radius: 6px;
+        border: 1px solid rgba(0,0,0,0.25);
+
+        h3 {
+            margin: 0 0 6px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            margin: 4px 0;
+        }
+    }
+
+
     .subcontrols {
         a, button {
             display: block;
@@ -513,7 +539,9 @@ aside.sidebar {
         display: flex;
         flex-direction: column;
         gap: 6px;
-        padding: 6px 8px;
+        max-height: 200px;
+        overflow-y: auto;
+        padding: 4px 0 0 0;
     }
 
     .route-block {
@@ -548,6 +576,48 @@ aside.sidebar {
 
     .route-delete:hover {
         color: red;
+    }
+
+    // ================================
+    // NAVIOS — PAINEL DE CONTROLE
+    // ================================
+
+    #ships-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        max-height: 220px;
+        overflow-y: auto;
+        padding: 4px 0 0 0;
+    }
+
+    .ship-block {
+        background: rgba(0, 0, 0, 0.35);
+        border-radius: 6px;
+        padding: 6px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        font-size: 11px;
+        color: white;
+        border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    .ship-block h4 {
+        margin: 0 0 4px 0;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .ship-block label {
+        font-size: 11px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .ship-block label input[type="checkbox"] {
+        margin: 0;
     }
 
 
