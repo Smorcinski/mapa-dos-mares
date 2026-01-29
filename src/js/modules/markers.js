@@ -190,7 +190,8 @@ function createShip(latLng, map, angle = 0, isEnemy = false, options = {}) {
     ship._id = (idOverride !== null ? idOverride : shipIdCounter++);
     ship._name = isEnemy ? `Inimigo ${ship._id}` : `Navio ${ship._id}`;
     ship._shipType = "bergantim";
-    ship._sizeMultiplier = 1;
+    ship._iconCfg = SHIP_TYPES.bergantim;
+    ship._sizeMultiplier = ship._iconCfg.mult || 1;
     ship._visionLevel = 0;
     ship._fogRadius = 0.7 * 8 * 0.7 * ship._sizeMultiplier; // mesmo tamanho do "Convés" (nível 1) atual
 
@@ -231,10 +232,10 @@ var boatMarker = L.icon({
 });
 
 const SHIP_TYPES = {
-    bote: { url: 'images/markers/bote_marker.png', size: [33.5, 40], anchor: [10, 20], mult: 0.4 },
-    chalupa: { url: 'images/markers/chalupa_marker.png', size: [36.2, 60], anchor: [11, 26], mult: 0.7 },
-    bergantim: { url: 'images/markers/bergantim_marker.png', size: [47.2, 90], anchor: [13, 40], mult: 1.0 },
-    galeao: { url: 'images/markers/galeao_marker.png', size: [57.4, 140], anchor: [17, 62], mult: 1.2 }
+    bote: { url: 'images/markers/bote_marker.png', size: [23.45, 28], anchor: [11.725, 14], mult: 0.4 * 0.7 }, // 70% do tamanho original
+    chalupa: { url: 'images/markers/chalupa_marker.png', size: [36.2, 60], anchor: [18.1, 30], mult: 0.7 },
+    bergantim: { url: 'images/markers/bergantim_marker.png', size: [47.2, 90], anchor: [23.6, 45], mult: 1.0 },
+    galeao: { url: 'images/markers/galeao_marker.png', size: [57.4, 140], anchor: [28.7, 70], mult: 1.2 }
 };
 
 function getShipIconForZoom(ship, leafletZoom, leafletMaxZoom = 7) {

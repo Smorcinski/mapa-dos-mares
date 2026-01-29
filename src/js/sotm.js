@@ -166,6 +166,20 @@ function normalizeCoord(raw) {
     return letter + String(num);
 }
 
+function cellToLatLngBounds(cellKey) {
+    // Converte "A1" em bounds {nw: [lat, lng], se: [lat, lng]}
+    var letter = cellKey[0];
+    var num = parseInt(cellKey.slice(1), 10);
+    var x0 = LETTER_X[letter];
+    var y0 = NUMBER_Y[num];
+    var x1 = x0 + 8;
+    var y1 = y0 - 8;
+    return {
+        nw: [y0, x0],  // canto superior esquerdo (norte-oeste)
+        se: [y1, x1]   // canto inferior direito (sul-leste)
+    };
+}
+
 function FogCanvasLayer(map) {
     this._map = map;
     this._canvas = L.DomUtil.create('canvas', 'fog-canvas');
@@ -252,6 +266,13 @@ FogCanvasLayer.prototype._redraw = function() {
     var ctx = this._canvas.getContext('2d');
     if (!ctx) return;
 
+    var w = this._canvas.width;
+    var h = this._canvas.height;
+
+    // Limpa o canvas inteiro
+    ctx.clearRect(0, 0, w, h);
+
+    // 1. Desenha fog sólido em toda a área visível do mapa
     var bounds = this._map.getBounds();
     var sw = bounds.getSouthWest();
     var ne = bounds.getNorthEast();
@@ -262,38 +283,49 @@ FogCanvasLayer.prototype._redraw = function() {
     var mapRight = Math.max(p0.x, p1.x);
     var mapBottom = Math.max(p0.y, p1.y);
 
-    // base: fog totalmente opaco apenas na área do mapa visível
     ctx.globalCompositeOperation = 'source-over';
-    ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
-    ctx.fillStyle = '#9aa0a6';
+    ctx.fillStyle = 'rgba(154, 160, 166, 0.85)';
     ctx.fillRect(mapLeft, mapTop, mapRight - mapLeft, mapBottom - mapTop);
 
-    // abre buracos
+    // 2. Fura os quadrantes revelados (sempre converte lat/lng → pixel no momento do draw)
     ctx.globalCompositeOperation = 'destination-out';
     ctx.fillStyle = 'rgba(0,0,0,1)';
+    
+    // Quadrantes revelados manualmente
+    this._revealedCells.forEach(function(key) {
+        var cellBounds = cellToLatLngBounds(key);
+        var p1 = this._map.latLngToContainerPoint(cellBounds.nw);
+        var p2 = this._map.latLngToContainerPoint(cellBounds.se);
+        var left = Math.min(p1.x, p2.x);
+        var top = Math.min(p1.y, p2.y);
+        var width = Math.abs(p2.x - p1.x);
+        var height = Math.abs(p2.y - p1.y);
+        ctx.fillRect(left, top, width, height);
+    }, this);
+
+    // Círculos revelados (movimento dos navios)
     for (var i = 0; i < this._revealedCircles.length; i++) {
         var c = this._revealedCircles[i];
         if (bounds.contains(c.latlng)) {
             this._clearCircle(ctx, c.latlng, c.radius);
         }
     }
-    this._revealedCells.forEach(function(key) {
-        this._clearCell(ctx, key);
-    }, this);
 
-    // re-cobre quadrantes forçados
+    // 3. Re-cobre quadrantes forçados
     ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = '#9aa0a6';
+    ctx.fillStyle = 'rgba(154, 160, 166, 0.85)';
     this._forcedCoveredCells.forEach(function(key) {
-        this._coverCell(ctx, key);
+        var cellBounds = cellToLatLngBounds(key);
+        var p1 = this._map.latLngToContainerPoint(cellBounds.nw);
+        var p2 = this._map.latLngToContainerPoint(cellBounds.se);
+        var left = Math.min(p1.x, p2.x);
+        var top = Math.min(p1.y, p2.y);
+        var width = Math.abs(p2.x - p1.x);
+        var height = Math.abs(p2.y - p1.y);
+        ctx.fillRect(left, top, width, height);
     }, this);
 
-    // #region agent log
-    if (this._dbgRedrawCount < 3) {
-        this._dbgRedrawCount++;
-        fetch('http://127.0.0.1:7242/ingest/390b337b-77f4-4ae2-9855-3a1dbf4dda2c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-1',hypothesisId:'FOG',location:'sotm.js:fog_redraw',message:'Fog redraw snapshot',data:{canvas:{w:this._canvas.width,h:this._canvas.height},mapArea:{left:mapLeft,top:mapTop,right:mapRight,bottom:mapBottom},zoom:this._map.getZoom()},timestamp:Date.now()})}).catch(()=>{});
-    }
-    // #endregion
+    ctx.globalCompositeOperation = 'source-over';
 };
 
 FogCanvasLayer.prototype.revealAt = function(latlng, radius) {
@@ -355,9 +387,9 @@ function onMapClick(e) {
     }
 
     else if (pendingPlacement === 'mainShip') {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/390b337b-77f4-4ae2-9855-3a1dbf4dda2c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-1',hypothesisId:'H1',location:'sotm.js:onMapClick:mainShip:pre',message:'mainShip branch entered',data:{hasMain:!!mainVesselShip,hasEnable:(typeof enableMainVesselControls),hasUpdateBtns:(typeof updateMainVesselButtons)},timestamp:Date.now()})}).catch(()=>{});
-        // #endregion
+        // Garante que o evento termine sempre, mesmo em caso de erro
+        pendingPlacement = null;
+        hidePopup();
 
         try {
             var titleEl = document.getElementById("main-vessel-title");
@@ -376,20 +408,10 @@ function onMapClick(e) {
             // habilita opções quando posicionada
             enableMainVesselControls(true);
             updateMainVesselButtons(name, true);
-
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/390b337b-77f4-4ae2-9855-3a1dbf4dda2c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-1',hypothesisId:'H1',location:'sotm.js:onMapClick:mainShip:post',message:'mainShip branch success before clear',data:{isActive:!!(mainVesselShip&&mainVesselShip._isActive)},timestamp:Date.now()})}).catch(()=>{});
-            // #endregion
-
-            pendingPlacement = null;
-            hidePopup();
-            return;
         } catch (err) {
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/390b337b-77f4-4ae2-9855-3a1dbf4dda2c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-1',hypothesisId:'H2',location:'sotm.js:onMapClick:mainShip:catch',message:'mainShip branch error',data:{name:err&&err.name,message:err&&err.message},timestamp:Date.now()})}).catch(()=>{});
-            // #endregion
-            throw err;
+            console.error("Erro ao posicionar embarcação:", err);
         }
+        return;
     }
 }
 
