@@ -383,6 +383,42 @@ function onMapClick(e) {
             // #endregion
             throw err;
         }
+    }if (pendingPlacement === 'mainShip') {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/390b337b-77f4-4ae2-9855-3a1dbf4dda2c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-1',hypothesisId:'H1',location:'sotm.js:onMapClick:mainShip:pre',message:'mainShip branch entered',data:{hasMain:!!mainVesselShip,hasEnable:(typeof enableMainVesselControls),hasUpdateBtns:(typeof updateMainVesselButtons)},timestamp:Date.now()})}).catch(()=>{});
+        // #endregion
+
+        try {
+            var titleEl = document.getElementById("main-vessel-title");
+            var name = titleEl && titleEl.textContent.trim() ? titleEl.textContent.trim() : "Embarcação";
+
+            if (mainVesselShip) {
+                mainVesselShip.setLatLng(e.latlng);
+                if (!map.hasLayer(mainVesselShip)) mainVesselShip.addTo(map);
+            } else {
+                mainVesselShip = mF.createMainVesselFromContext({ latlng: e.latlng }, map);
+            }
+
+            // marca como ativa
+            mainVesselShip._isActive = true;
+
+            // habilita opções quando posicionada
+            enableMainVesselControls(true);
+            updateMainVesselButtons(name, true);
+
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/390b337b-77f4-4ae2-9855-3a1dbf4dda2c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-1',hypothesisId:'H1',location:'sotm.js:onMapClick:mainShip:post',message:'mainShip branch success before clear',data:{isActive:!!(mainVesselShip&&mainVesselShip._isActive)},timestamp:Date.now()})}).catch(()=>{});
+            // #endregion
+
+            pendingPlacement = null;
+            hidePopup();
+            return;
+        } catch (err) {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/390b337b-77f4-4ae2-9855-3a1dbf4dda2c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-1',hypothesisId:'H2',location:'sotm.js:onMapClick:mainShip:catch',message:'mainShip branch error',data:{name:err&&err.name,message:err&&err.message},timestamp:Date.now()})}).catch(()=>{});
+            // #endregion
+            throw err;
+        }
     }
 }
 
@@ -1050,15 +1086,19 @@ $(function() {
         }
 
         positionBtn.addEventListener("click", function() {
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/390b337b-77f4-4ae2-9855-3a1dbf4dda2c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-1',hypothesisId:'H3',location:'sotm.js:mainVessel:positionBtn',message:'Position button clicked',data:{pendingPlacementBefore:pendingPlacement},timestamp:Date.now()})}).catch(()=>{});
-            // #endregion
-            pendingPlacement = 'mainShip';
-            showPopup("Clique no mapa para posicionar " + getMainVesselName() + ".");
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/390b337b-77f4-4ae2-9855-3a1dbf4dda2c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-1',hypothesisId:'H3',location:'sotm.js:mainVessel:positionBtn:set',message:'pendingPlacement set',data:{pendingPlacementAfter:pendingPlacement},timestamp:Date.now()})}).catch(()=>{});
-            // #endregion
-        });
+
+			// se já está aguardando clique no mapa, cancela
+			if (pendingPlacement === 'mainShip') {
+				pendingPlacement = null;
+				hidePopup();
+				return;
+			}
+
+			// ativa modo de posicionamento
+			pendingPlacement = 'mainShip';
+			showPopup("Clique no mapa para posicionar " + getMainVesselName() + ".");
+		});
+
 
         if (removeBtn) {
             removeBtn.addEventListener("click", function() {
