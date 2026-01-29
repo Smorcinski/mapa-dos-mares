@@ -110,7 +110,7 @@ zoomLevelControl.onAdd = function (map) {
         const minZ = (typeof map.getMinZoom === "function" ? map.getMinZoom() : 2) || 2;
         const totalLevels = (maxZ - minZ) + 1; // aqui: 6
         const level = (maxZ - z) + 1; // z=maxZ => 1
-        div.innerHTML = `Zoom ${level}/${totalLevels}`;
+        div.innerHTML = `${level}/${totalLevels}`;
     }
 
     render();
@@ -141,11 +141,18 @@ var layer = L.tileLayer(cdnpath + "images/tiles/v3.6/{z}/{x}/{y}.png", {
 // FOG OF WAR (Descoberta) — camada única opaca com "buracos"
 // =========================
 map.createPane('fogPane');
-map.getPane('fogPane').style.zIndex = 450;
+map.getPane('fogPane').style.zIndex = 1000;
 
 // Tabelas compatíveis com o graticule (L.SimpleGraticule-sot.js)
-var LETTER_X = {A:0,B:8,C:16,D:24,E:32,F:41,G:49,H:57,I:65,J:73,K:82,L:90,M:98,N:106,O:114,P:123,Q:131,R:139,S:147,T:155,U:164,V:172,W:180,X:188,Y:196,Z:205};
-var NUMBER_Y = {1:0,2:-8,3:-16,4:-24,5:-31,6:-39,7:-47,8:-54,9:-62,10:-70,11:-77,12:-85,13:-93,14:-101,15:-108,16:-116,17:-124,18:-131,19:-139,20:-147,21:-154,22:-162,23:-170,24:-178,25:-185,26:-193};
+const LETTER_X = {};
+"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach((l, i) => {
+  LETTER_X[l] = i * 8;
+});
+
+const NUMBER_Y = {};
+for (let i = 1; i <= 26; i++) {
+  NUMBER_Y[i] = -(i - 1) * 8;
+}
 
 function normalizeCoord(raw) {
     if (!raw) return null;
@@ -347,42 +354,6 @@ function onMapClick(e) {
         return;
     }
 
-    if (pendingPlacement === 'mainShip') {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/390b337b-77f4-4ae2-9855-3a1dbf4dda2c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-1',hypothesisId:'H1',location:'sotm.js:onMapClick:mainShip:pre',message:'mainShip branch entered',data:{hasMain:!!mainVesselShip,hasEnable:(typeof enableMainVesselControls),hasUpdateBtns:(typeof updateMainVesselButtons)},timestamp:Date.now()})}).catch(()=>{});
-        // #endregion
-
-        try {
-            var titleEl = document.getElementById("main-vessel-title");
-            var name = titleEl && titleEl.textContent.trim() ? titleEl.textContent.trim() : "Embarcação";
-
-            if (mainVesselShip) {
-                mainVesselShip.setLatLng(e.latlng);
-                if (!map.hasLayer(mainVesselShip)) mainVesselShip.addTo(map);
-            } else {
-                mainVesselShip = mF.createMainVesselFromContext({ latlng: e.latlng }, map);
-            }
-
-            // marca como ativa
-            mainVesselShip._isActive = true;
-
-            // habilita opções quando posicionada
-            enableMainVesselControls(true);
-            updateMainVesselButtons(name, true);
-
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/390b337b-77f4-4ae2-9855-3a1dbf4dda2c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-1',hypothesisId:'H1',location:'sotm.js:onMapClick:mainShip:post',message:'mainShip branch success before clear',data:{isActive:!!(mainVesselShip&&mainVesselShip._isActive)},timestamp:Date.now()})}).catch(()=>{});
-            // #endregion
-
-            pendingPlacement = null;
-            hidePopup();
-            return;
-        } catch (err) {
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/390b337b-77f4-4ae2-9855-3a1dbf4dda2c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-1',hypothesisId:'H2',location:'sotm.js:onMapClick:mainShip:catch',message:'mainShip branch error',data:{name:err&&err.name,message:err&&err.message},timestamp:Date.now()})}).catch(()=>{});
-            // #endregion
-            throw err;
-        }
     }if (pendingPlacement === 'mainShip') {
         // #region agent log
         fetch('http://127.0.0.1:7242/ingest/390b337b-77f4-4ae2-9855-3a1dbf4dda2c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-1',hypothesisId:'H1',location:'sotm.js:onMapClick:mainShip:pre',message:'mainShip branch entered',data:{hasMain:!!mainVesselShip,hasEnable:(typeof enableMainVesselControls),hasUpdateBtns:(typeof updateMainVesselButtons)},timestamp:Date.now()})}).catch(()=>{});
@@ -463,59 +434,7 @@ var islandsLayer = new L.LayerGroup();
 layerArray.push(['islands', islandsLayer]);
 map.addLayer(islandsLayer);
 
-var chickensLayer = new L.LayerGroup();
-layerArray.push(['chickens', chickensLayer]);
 
-var snakesLayer = new L.LayerGroup();
-layerArray.push(['snakes', snakesLayer]);
-
-var pigsLayer = new L.LayerGroup();
-layerArray.push(['pigs', pigsLayer]);
-
-
-
-
-/* customCircleMarker = L.CircleMarker.extend({
-    options: { 
-       someCustomProperty: 'Custom data!',
-       anotherCustomProperty: 'More data!'
-    }
- }); */
-
- //use circlemarker?
-
-var chicken_marker = L.icon({
-    iconUrl: 'images/markers/chicken_marker.png',
-    shadowUrl: 'images/markers/chicken_marker.png',
-
-    iconSize:     [30, 30], // size of the icon
-    shadowSize:   [0, 0], // size of the shadow
-    iconAnchor:   [0, 30], // point of the icon which will correspond to marker's location
-    shadowAnchor: [0, 0],  // the same for the shadow
-    popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
-});
-
-
-var snake_marker = L.icon({
-    iconUrl: 'images/markers/snake_marker.png',
-    shadowUrl: 'images/markers/snake_marker.png',
-
-    iconSize:     [30, 30], // size of the icon
-    shadowSize:   [0, 0], // size of the shadow
-    iconAnchor:   [30, 30], // point of the icon which will correspond to marker's location
-    shadowAnchor: [0, 0],  // the same for the shadow
-    popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
-});
-var pig_marker = L.icon({
-    iconUrl: 'images/markers/pig_marker.png',
-    shadowUrl: 'images/markers/pig_marker.png',
-
-    iconSize:     [30, 30], // size of the icon
-    shadowSize:   [0, 0], // size of the shadow
-    iconAnchor:   [30, 0], // point of the icon which will correspond to marker's location
-    shadowAnchor: [0, 0],  // the same for the shadow
-    popupAnchor:  [0, 0] // point from which the popup should open relative to the iconAnchor
-});
 
 
 //Probably don't need to do this anymore, since it'll take watever params at this point
@@ -562,63 +481,6 @@ for(var i in islands) {
 			html: '<span class="my-div-span" data-anchor-x="0">'+islands[i].title+'</span>'
 		})
     }).addTo(islandsLayer);
-    /*
-	islandMarker.bindPopup('<div class="lf-popup">'+
-							'<img src="images/screenshots/small/'+((typeof islands[i].img != 'undefined')?islands[i].img :'bientot.jpg')+'" />'+
-							'<span class="popup-title-island">'+islands[i].title+'</span>'+
-							'<span class="popup-type-island">'+islands[i].type+'</span>'+
-							'<span class="popup-img-island hiddenDiv">'+((typeof islands[i].img != 'undefined')?islands[i].img :'bientot.jpg')+'</span>'+
-							'<span class="popup-hasChickens-island hiddenDiv">'+((islands[i].hasOwnProperty('chickens'))?"O":"N")+'</span>'+
-							'<span class="popup-hasPigs-island hiddenDiv">'+((islands[i].hasOwnProperty('pigs'))?"O":"N")+'</span>'+
-							'<span class="popup-hasSnakes-island hiddenDiv">'+((islands[i].hasOwnProperty('snakes'))?"O":"N")+'</span>'+
-						'</div>', {minWidth: 322});
-						
-	islandMarker.on('mouseover', function (e) {
-		this.openPopup();
-	});
-	islandMarker.on('mouseout', function (e) {
-		this.closePopup();
-	});
-	islandMarker.on('click', function (e) {
-		map.setView(this.getLatLng(), 6);
-		
-		var modal = document.getElementById('islandModal');
-		var img = document.getElementById('islandModalImg');
-		var titre = document.getElementById('islandModalTitre');
-		var type = document.getElementById('islandModalType');
-		var span = document.getElementsByClassName("closeModal")[0];
-		
-		modal.style.display = "block";
-		
-		// When the user clicks on <span> (x), close the modal
-		span.onclick = function() {
-            modal.style.display = "none";
-        }
-		
-		// When the user clicks anywhere outside of the modal, close it
-		window.onclick = function(event) {
-			if (event.target == modal) {
-				modal.style.display = "none";
-			}
-		}
-		img.src = "images/screenshots/medium/" + document.getElementsByClassName("popup-img-island")[0].innerHTML;
-		titre.innerHTML = document.getElementsByClassName("popup-title-island")[0].innerHTML;
-		type.innerHTML = document.getElementsByClassName("popup-type-island")[0].innerHTML;
-		
-		$('#islandModalAnimals').html("");
-		if(document.getElementsByClassName("popup-hasChickens-island")[0].innerHTML == "O"){
-			$('#islandModalAnimals').append('<div class="animal-box"><img src="images/animal-info-box/chicken-icon-small.png" /></div>');
-		}
-		if(document.getElementsByClassName("popup-hasPigs-island")[0].innerHTML == "O"){
-			$('#islandModalAnimals').append('<div class="animal-box"><img src="images/animal-info-box/pig-icon-white.png" height="20" /></div>');
-		}
-		if(document.getElementsByClassName("popup-hasSnakes-island")[0].innerHTML == "O"){
-			$('#islandModalAnimals').append('<div class="animal-box"><img src="images/animal-info-box/snake-icon-white-small.png" /></div>');
-		}
-		
-		this.closePopup();
-    });
-    */
 
     markersLayer.addLayer(circle);
     island_markers[i] = circle;
@@ -648,47 +510,6 @@ for(var i in islands) {
         }
     });
 
-    if (islands[i].chickens) {
-
-        var chickenLoc = modifyLoc(islands[i].loc, cRad * 0.5, cRad * 0.6);
-
-        var marker = L.marker(chickenLoc, { 
-            icon: chicken_marker,
-            title: 'chicken'
-            //opacity: 0
-        } 
-        ).addTo(chickensLayer);
-        marker.setIcon(chicken_marker);
-
-    }
-
-    if (islands[i].snakes) {
-
-        var snakeLoc = modifyLoc(islands[i].loc, cRad * 0.5, (cRad * 0.6) * -1);
-
-        var marker = L.marker(snakeLoc, { 
-            icon: snake_marker,
-            title: 'snake' 
-            //opacity: 0 
-        } 
-        ).addTo(snakesLayer);
-
-        
-    }
-
-    if (islands[i].pigs) {
-
-        var pigLoc = modifyLoc(islands[i].loc, (cRad * 0.5) * -1, (cRad * 0.6) * -1);
-
-        var marker = L.marker(pigLoc, { 
-            icon: pig_marker,
-            title: 'pigs'  
-            //opacity: 0
-        } 
-        ).addTo(pigsLayer);
-
-        
-    }
 }
 
 
@@ -731,80 +552,6 @@ map.on('zoomend', function() {
 			lastZoomApplied = 4;
     }
 });
-
-
-
-
-/**
- * * ADD BEACONS
- */
-var beaconsLayer = new L.LayerGroup();
-layerArray.push(['beacons', beaconsLayer]);
-map.addLayer(beaconsLayer);
-
-for(var t in beacons) {
-    var mkr = mF.getMarker(beacons[t], "beacon");
-    mkr.marker.addTo(beaconsLayer)
-    .bindPopup(mkr.title);
-
-    pList.addPlaceToList("beacon", mkr.title, "beaconClass " + window.websafe(mkr.title), beacons[t]);
-};
-
-
-
-/**
- * * ADD CARGO RUN
- */
-var cargorunsLayer = new L.LayerGroup();
-layerArray.push(['cargoruns', cargorunsLayer]);
-map.addLayer(cargorunsLayer);
-
-for(var t in cargoruns) {
-    var mkr = mF.getMarker(cargoruns[t], "cargo");
-    mkr.marker.addTo(cargorunsLayer)
-    .bindPopup(mkr.title);
-
-    pList.addPlaceToList("cargorun", mkr.title, "cargoClass " + window.websafe(mkr.title), cargoruns[t]);
-}
-
-/**
- * * ADD THRONES
- */
-var thronesLayer = new L.LayerGroup();
-layerArray.push(['thrones', thronesLayer]);
-map.addLayer(thronesLayer);
-
-for(var t in thrones) {
-    var mkr = mF.getMarker(thrones[t], "throne");
-    mkr.marker.addTo(thronesLayer)
-    .bindPopup(mkr.desc);
-
-    pList.addPlaceToList("throne", mkr.title, "throneClass " + window.websafe(mkr.title), thrones[t]);
-};
-
-
-/**
- * * ADD TALL TALES
- */
-var talltalesLayer = new L.LayerGroup();
-layerArray.push(['talltales', talltalesLayer]);
-map.addLayer(talltalesLayer);
-for(var t in places) {
-    var mkr = mF.getMarker(places[t], "talltale");
-    var popUpHTML = '<div class="lf-popup">'+
-    '<h3 class="pop_title">' + mkr.title + '</h3><p>' + mkr.desc + '</p>';
-    if (places[t].image) {
-        popUpHTML +='<img src="images/screenshots/' + places[t].image + '" class="popup_screenshot js-show-large-screenshot"/>';
-    }
-    popUpHTML += '</div>';
-
-    mkr.marker.addTo(talltalesLayer)
-    //.bindPopup(mkr.desc);
-    .bindPopup(popUpHTML, {minWidth: 322});
-
-    pList.addPlaceToList("talltale", mkr.title, "talltaleClass " + window.websafe(mkr.title), places[t]);
-}; 
-
 
 
 
@@ -1294,28 +1041,6 @@ $(function() {
 
 
 
-
-    
-
-    $(".js-searchforisland").click(function() {
-        
-        var theIsland = getNextIsland($(this).data("dir"));
-
-        var LatLong = theIsland.loc;
-        map.setView(LatLong, 7);
-        //map.panTo(LatLong, 7);
-        adjustAlphaNum();
-
-        showPopup("Island " + (currentSearchIsland + 1) + " of " + islands.length);
-        clearTimeout(popUpInt);
-        popUpInt = setTimeout(hidePopup, 3000);
-    });
-
-
-    $(".js-toggleMarkers").click(function() {
-        toggleLayer($(this).attr("name"), $(this).is(":checked"));	
-    });
-
     $(".js-fullscreen").click(function() {
         window.toggleFullScreen();
     });
@@ -1332,11 +1057,6 @@ $(function() {
     });
 
 
-    /* $(".js-installfiles").click(function() {
-        console.log("click install");
-        pwa.installer();
-    }); */
-
     $(".js-settings").click(function() {
         console.log("click settings");
         $(".settings").addClass("open");
@@ -1348,45 +1068,6 @@ $(function() {
     });
 
     readXstring();
-
-
-    $(".js-open-islandfinder").click(function() {
-        $(".js-ifoverlay").addClass("open");
-        $(".js-island-list").html(pList.getIslandFinderHTML(islands));
-
-        $(".js-overlay-words").html("<h2>Island Finder</h2><p>Scroll through these images of the islands of Sea Of Thieves and find the one that your treasure is marked on. Click to jump to island in the map</p>");
-
-        $(".js-jumptoisland").click(function() {
-            var myIdx = $(this).data('idx');
-            $(".js-ifoverlay").removeClass("open");
-            var LatLong = islands[myIdx].loc;
-            map.setView(LatLong, 7);
-            adjustAlphaNum();
-        });
-    });
-
-    $(".js-close-if-overlay").click(function() {
-        $(".js-ifoverlay").removeClass("open");
-    });
-
-    $('body').on('click', '.js-show-large-screenshot', function () {
-        var myImage = $(this).attr("src");
-        var myTitle = $(this).parent().find(".pop_title").text();
-        var myWords = $(this).parent().find("p").text();
-        console.log(myTitle, myWords);
-        //console.log("show " + myImage);
-
-    });
-
-
-
-    $('.js-open-searchbar').click(function() {
-        $(".sidebar.left").toggleClass("open");
-    });
-
-    $('.js-toggle-right-panel').click(function() {
-        $(".sidebar.right").toggleClass("closed");
-    })
 
 
     
