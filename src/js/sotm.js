@@ -173,7 +173,10 @@ function FogCanvasLayer(map) {
 
 FogCanvasLayer.prototype.addTo = function(map) {
     this._map = map;
-    map.getPane('fogPane').appendChild(this._canvas);
+    var pane = map.getPane('fogPane');
+    pane.appendChild(this._canvas);
+    this._canvas.style.width = '100%';
+    this._canvas.style.height = '100%';
     map.on('move zoom resize', this._redraw, this);
     this._redraw();
     return this;
@@ -181,8 +184,12 @@ FogCanvasLayer.prototype.addTo = function(map) {
 
 FogCanvasLayer.prototype._resize = function() {
     var size = this._map.getSize();
+    var container = this._map.getContainer();
+    var rect = container.getBoundingClientRect();
     if (this._canvas.width !== size.x) this._canvas.width = size.x;
     if (this._canvas.height !== size.y) this._canvas.height = size.y;
+    this._canvas.style.width = size.x + 'px';
+    this._canvas.style.height = size.y + 'px';
 };
 
 FogCanvasLayer.prototype._latLngRadiusToPixels = function(latlng, radius) {
@@ -237,18 +244,30 @@ FogCanvasLayer.prototype._redraw = function() {
     var ctx = this._canvas.getContext('2d');
     if (!ctx) return;
 
-    // base: fog totalmente opaco
+    var bounds = this._map.getBounds();
+    var sw = bounds.getSouthWest();
+    var ne = bounds.getNorthEast();
+    var p0 = this._map.latLngToContainerPoint(sw);
+    var p1 = this._map.latLngToContainerPoint(ne);
+    var mapLeft = Math.min(p0.x, p1.x);
+    var mapTop = Math.min(p0.y, p1.y);
+    var mapRight = Math.max(p0.x, p1.x);
+    var mapBottom = Math.max(p0.y, p1.y);
+
+    // base: fog totalmente opaco apenas na área do mapa visível
     ctx.globalCompositeOperation = 'source-over';
     ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
     ctx.fillStyle = '#9aa0a6';
-    ctx.fillRect(0, 0, this._canvas.width, this._canvas.height);
+    ctx.fillRect(mapLeft, mapTop, mapRight - mapLeft, mapBottom - mapTop);
 
     // abre buracos
     ctx.globalCompositeOperation = 'destination-out';
     ctx.fillStyle = 'rgba(0,0,0,1)';
     for (var i = 0; i < this._revealedCircles.length; i++) {
         var c = this._revealedCircles[i];
-        this._clearCircle(ctx, c.latlng, c.radius);
+        if (bounds.contains(c.latlng)) {
+            this._clearCircle(ctx, c.latlng, c.radius);
+        }
     }
     this._revealedCells.forEach(function(key) {
         this._clearCell(ctx, key);
@@ -326,6 +345,9 @@ function onMapClick(e) {
         } else {
             mainVesselShip = mF.createMainVesselFromContext({ latlng: e.latlng }, map);
         }
+
+        // marca como ativa
+        mainVesselShip._isActive = true;
 
         // habilita opções quando posicionada
         enableMainVesselControls(true);
@@ -988,7 +1010,9 @@ $(function() {
         if (!positionBtn) return;
 
         function refresh() {
-            updateMainVesselButtons(getMainVesselName(), !!(mainVesselShip && map.hasLayer(mainVesselShip)));
+            var isActive = !!(mainVesselShip && mainVesselShip._isActive && map.hasLayer(mainVesselShip));
+            updateMainVesselButtons(getMainVesselName(), isActive);
+            enableMainVesselControls(isActive);
         }
 
         enableMainVesselControls(false);
@@ -1008,6 +1032,7 @@ $(function() {
             removeBtn.addEventListener("click", function() {
                 if (!mainVesselShip) return;
                 if (map.hasLayer(mainVesselShip)) map.removeLayer(mainVesselShip);
+                mainVesselShip._isActive = false;
                 // também limpa visão/cones se estiverem ativos
                 mF.setShipCannonsEnabled(mainVesselShip, false, map);
                 mF.setShipVisionLevel(mainVesselShip, 0, map);
@@ -1019,19 +1044,19 @@ $(function() {
         // eventos das opções da embarcação (só funcionam quando habilitadas)
         if (typeSelect) {
             typeSelect.addEventListener("change", function() {
-                if (!mainVesselShip) return;
+                if (!mainVesselShip || !mainVesselShip._isActive) return;
                 mF.setShipType(mainVesselShip, typeSelect.value, map);
             });
         }
 
         if (cannons) {
             cannons.addEventListener("change", function() {
-                if (!mainVesselShip) return;
+                if (!mainVesselShip || !mainVesselShip._isActive) return;
                 mF.setShipCannonsEnabled(mainVesselShip, cannons.checked, map);
             });
         }
         function syncVisionFromMain() {
-            if (!mainVesselShip) return;
+            if (!mainVesselShip || !mainVesselShip._isActive) return;
             var lvl = 0;
             if (deck && deck.checked) lvl += 1;
             if (mast && mast.checked) lvl += 1;
@@ -1039,16 +1064,19 @@ $(function() {
             mF.setShipVisionLevel(mainVesselShip, lvl, map);
         }
         if (deck) deck.addEventListener("change", function() {
+            if (!mainVesselShip || !mainVesselShip._isActive) return;
             if (deck && !deck.checked) { if (mast) mast.checked = false; if (scope) scope.checked = false; }
             if (mast && mast.checked && deck && !deck.checked) deck.checked = true;
             if (scope && scope.checked && deck && !deck.checked) deck.checked = true;
             syncVisionFromMain();
         });
         if (mast) mast.addEventListener("change", function() {
+            if (!mainVesselShip || !mainVesselShip._isActive) return;
             if (mast.checked && deck && !deck.checked) deck.checked = true;
             syncVisionFromMain();
         });
         if (scope) scope.addEventListener("change", function() {
+            if (!mainVesselShip || !mainVesselShip._isActive) return;
             if (scope.checked && deck && !deck.checked) deck.checked = true;
             syncVisionFromMain();
         });
