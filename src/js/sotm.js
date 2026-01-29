@@ -169,6 +169,7 @@ function FogCanvasLayer(map) {
     this._revealedCircles = []; // {latlng, radius}
     this._revealedCells = new Set(); // "A1"
     this._forcedCoveredCells = new Set(); // "A1"
+    this._dbgRedrawCount = 0;
 }
 
 FogCanvasLayer.prototype.addTo = function(map) {
@@ -279,6 +280,13 @@ FogCanvasLayer.prototype._redraw = function() {
     this._forcedCoveredCells.forEach(function(key) {
         this._coverCell(ctx, key);
     }, this);
+
+    // #region agent log
+    if (this._dbgRedrawCount < 3) {
+        this._dbgRedrawCount++;
+        fetch('http://127.0.0.1:7242/ingest/390b337b-77f4-4ae2-9855-3a1dbf4dda2c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-1',hypothesisId:'FOG',location:'sotm.js:fog_redraw',message:'Fog redraw snapshot',data:{canvas:{w:this._canvas.width,h:this._canvas.height},mapArea:{left:mapLeft,top:mapTop,right:mapRight,bottom:mapBottom},zoom:this._map.getZoom()},timestamp:Date.now()})}).catch(()=>{});
+    }
+    // #endregion
 };
 
 FogCanvasLayer.prototype.revealAt = function(latlng, radius) {
@@ -313,6 +321,10 @@ window.fogToggleCell = function(rawCoord, discover) { fog.toggleCell(rawCoord, !
 function onMapClick(e) {
     console.log("You clicked the map at " + e.latlng);
 
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/390b337b-77f4-4ae2-9855-3a1dbf4dda2c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-1',hypothesisId:'H4',location:'sotm.js:onMapClick:entry',message:'Map click',data:{pendingPlacement:pendingPlacement,latlng:e&&e.latlng?{lat:e.latlng.lat,lng:e.latlng.lng}:null},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+
     if (pendingPlacement === 'marker') {
         mF.addXmark(e.latlng, map);
         mF.setQstring();
@@ -336,27 +348,41 @@ function onMapClick(e) {
     }
 
     if (pendingPlacement === 'mainShip') {
-        var titleEl = document.getElementById("main-vessel-title");
-        var name = titleEl && titleEl.textContent.trim() ? titleEl.textContent.trim() : "Embarcação";
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/390b337b-77f4-4ae2-9855-3a1dbf4dda2c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-1',hypothesisId:'H1',location:'sotm.js:onMapClick:mainShip:pre',message:'mainShip branch entered',data:{hasMain:!!mainVesselShip,hasEnable:(typeof enableMainVesselControls),hasUpdateBtns:(typeof updateMainVesselButtons)},timestamp:Date.now()})}).catch(()=>{});
+        // #endregion
 
-        if (mainVesselShip) {
-            mainVesselShip.setLatLng(e.latlng);
-            if (!map.hasLayer(mainVesselShip)) mainVesselShip.addTo(map);
-        } else {
-            mainVesselShip = mF.createMainVesselFromContext({ latlng: e.latlng }, map);
+        try {
+            var titleEl = document.getElementById("main-vessel-title");
+            var name = titleEl && titleEl.textContent.trim() ? titleEl.textContent.trim() : "Embarcação";
+
+            if (mainVesselShip) {
+                mainVesselShip.setLatLng(e.latlng);
+                if (!map.hasLayer(mainVesselShip)) mainVesselShip.addTo(map);
+            } else {
+                mainVesselShip = mF.createMainVesselFromContext({ latlng: e.latlng }, map);
+            }
+
+            // marca como ativa
+            mainVesselShip._isActive = true;
+
+            // habilita opções quando posicionada
+            enableMainVesselControls(true);
+            updateMainVesselButtons(name, true);
+
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/390b337b-77f4-4ae2-9855-3a1dbf4dda2c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-1',hypothesisId:'H1',location:'sotm.js:onMapClick:mainShip:post',message:'mainShip branch success before clear',data:{isActive:!!(mainVesselShip&&mainVesselShip._isActive)},timestamp:Date.now()})}).catch(()=>{});
+            // #endregion
+
+            pendingPlacement = null;
+            hidePopup();
+            return;
+        } catch (err) {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/390b337b-77f4-4ae2-9855-3a1dbf4dda2c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-1',hypothesisId:'H2',location:'sotm.js:onMapClick:mainShip:catch',message:'mainShip branch error',data:{name:err&&err.name,message:err&&err.message},timestamp:Date.now()})}).catch(()=>{});
+            // #endregion
+            throw err;
         }
-
-        // marca como ativa
-        mainVesselShip._isActive = true;
-
-        // habilita opções quando posicionada
-        enableMainVesselControls(true);
-
-        updateMainVesselButtons(name, true);
-
-        pendingPlacement = null;
-        hidePopup();
-        return;
     }
 }
 
@@ -1024,8 +1050,14 @@ $(function() {
         }
 
         positionBtn.addEventListener("click", function() {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/390b337b-77f4-4ae2-9855-3a1dbf4dda2c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-1',hypothesisId:'H3',location:'sotm.js:mainVessel:positionBtn',message:'Position button clicked',data:{pendingPlacementBefore:pendingPlacement},timestamp:Date.now()})}).catch(()=>{});
+            // #endregion
             pendingPlacement = 'mainShip';
             showPopup("Clique no mapa para posicionar " + getMainVesselName() + ".");
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/390b337b-77f4-4ae2-9855-3a1dbf4dda2c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-1',hypothesisId:'H3',location:'sotm.js:mainVessel:positionBtn:set',message:'pendingPlacement set',data:{pendingPlacementAfter:pendingPlacement},timestamp:Date.now()})}).catch(()=>{});
+            // #endregion
         });
 
         if (removeBtn) {
