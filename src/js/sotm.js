@@ -46,6 +46,8 @@ var compassDragging = false;
 // modo de posicionamento via clique no mapa
 // valores possíveis: null | 'ship' | 'enemy' | 'marker'
 var pendingPlacement = null;
+// flag separada para controlar posicionamento da embarcação principal
+var pendingMainVesselPlacement = false;
 
 // contador para nomear navios / inimigos nos painéis
 var shipCounter = 0;
@@ -168,12 +170,14 @@ function normalizeCoord(raw) {
 
 function cellToLatLngBounds(cellKey) {
     // Converte "A1" em bounds {nw: [lat, lng], se: [lat, lng]}
+    // Usa os mesmos valores do graticule: interval: 8.2, vinterval: 7.7
     var letter = cellKey[0];
     var num = parseInt(cellKey.slice(1), 10);
     var x0 = LETTER_X[letter];
     var y0 = NUMBER_Y[num];
-    var x1 = x0 + 8;
-    var y1 = y0 - 8;
+    // Usa os mesmos intervalos do graticule para alinhamento perfeito
+    var x1 = x0 + 8.2;
+    var y1 = y0 - 7.7;
     return {
         nw: [y0, x0],  // canto superior esquerdo (norte-oeste)
         se: [y1, x1]   // canto inferior direito (sul-leste)
@@ -246,19 +250,15 @@ FogCanvasLayer.prototype._clearCell = function(ctx, key) {
 };
 
 FogCanvasLayer.prototype._coverCell = function(ctx, key) {
-    var letter = key[0];
-    var num = parseInt(key.slice(1), 10);
-    var x0 = LETTER_X[letter];
-    var y0 = NUMBER_Y[num];
-    var x1 = x0 + 8;
-    var y1 = y0 - 8;
-    var p0 = this._map.latLngToContainerPoint([y0, x0]);
-    var p1 = this._map.latLngToContainerPoint([y1, x1]);
-    var left = Math.min(p0.x, p1.x);
-    var top = Math.min(p0.y, p1.y);
-    var w = Math.abs(p1.x - p0.x);
-    var h = Math.abs(p1.y - p0.y);
-    ctx.fillRect(left, top, w, h);
+    // Usa os mesmos valores do graticule para alinhamento perfeito
+    var cellBounds = cellToLatLngBounds(key);
+    var p1 = this._map.latLngToContainerPoint(cellBounds.nw);
+    var p2 = this._map.latLngToContainerPoint(cellBounds.se);
+    var left = Math.min(p1.x, p2.x);
+    var top = Math.min(p1.y, p2.y);
+    var width = Math.abs(p2.x - p1.x);
+    var height = Math.abs(p2.y - p1.y);
+    ctx.fillRect(left, top, width, height);
 };
 
 FogCanvasLayer.prototype._redraw = function() {
@@ -386,8 +386,10 @@ function onMapClick(e) {
         return;
     }
 
-    else if (pendingPlacement === 'mainShip') {
-        // Garante que o evento termine sempre, mesmo em caso de erro
+    // Verifica flag separada para embarcação principal (mais confiável)
+    if (pendingMainVesselPlacement) {
+        // Desativa imediatamente para evitar múltiplos cliques
+        pendingMainVesselPlacement = false;
         pendingPlacement = null;
         hidePopup();
 
@@ -857,13 +859,15 @@ $(function() {
         positionBtn.addEventListener("click", function() {
 
 			// se já está aguardando clique no mapa, cancela
-			if (pendingPlacement === 'mainShip') {
+			if (pendingMainVesselPlacement) {
+				pendingMainVesselPlacement = false;
 				pendingPlacement = null;
 				hidePopup();
 				return;
 			}
 
-			// ativa modo de posicionamento
+			// ativa modo de posicionamento usando flag booleana separada
+			pendingMainVesselPlacement = true;
 			pendingPlacement = 'mainShip';
 			showPopup("Clique no mapa para posicionar " + getMainVesselName() + ".");
 		});
@@ -878,6 +882,10 @@ $(function() {
                 mF.setShipCannonsEnabled(mainVesselShip, false, map);
                 mF.setShipVisionLevel(mainVesselShip, 0, map);
                 enableMainVesselControls(false);
+                // limpa flags de posicionamento pendente
+                pendingMainVesselPlacement = false;
+                pendingPlacement = null;
+                hidePopup();
                 refresh();
             });
         }
