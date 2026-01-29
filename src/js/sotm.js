@@ -340,21 +340,21 @@ function onMapClick(e) {
         return;
     }
 
-    if (pendingPlacement === 'ship') {
+    else if (pendingPlacement === 'ship') {
         mF.addShipFromContext({ latlng: e.latlng }, map);
         pendingPlacement = null;
         hidePopup();
         return;
     }
 
-    if (pendingPlacement === 'enemy') {
+    else if (pendingPlacement === 'enemy') {
         mF.addEnemyFromContext({ latlng: e.latlng }, map);
         pendingPlacement = null;
         hidePopup();
         return;
     }
 
-    }if (pendingPlacement === 'mainShip') {
+    else if (pendingPlacement === 'mainShip') {
         // #region agent log
         fetch('http://127.0.0.1:7242/ingest/390b337b-77f4-4ae2-9855-3a1dbf4dda2c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-1',hypothesisId:'H1',location:'sotm.js:onMapClick:mainShip:pre',message:'mainShip branch entered',data:{hasMain:!!mainVesselShip,hasEnable:(typeof enableMainVesselControls),hasUpdateBtns:(typeof updateMainVesselButtons)},timestamp:Date.now()})}).catch(()=>{});
         // #endregion
