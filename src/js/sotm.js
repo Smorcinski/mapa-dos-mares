@@ -46,8 +46,6 @@ var compassDragging = false;
 // modo de posicionamento via clique no mapa
 // valores possíveis: null | 'ship' | 'enemy' | 'marker'
 var pendingPlacement = null;
-// flag separada para controlar posicionamento da embarcação principal
-var pendingMainVesselPlacement = false;
 
 // contador para nomear navios / inimigos nos painéis
 var shipCounter = 0;
@@ -145,16 +143,21 @@ var layer = L.tileLayer(cdnpath + "images/tiles/v3.6/{z}/{x}/{y}.png", {
 map.createPane('fogPane');
 map.getPane('fogPane').style.zIndex = 1000;
 
-// Tabelas compatíveis com o graticule (L.SimpleGraticule-sot.js)
-const LETTER_X = {};
-"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach((l, i) => {
-  LETTER_X[l] = i * 8;
-});
+// Tabelas exatas do graticule (L.SimpleGraticule-sot.js)
+// Usa os valores exatos do array letters e numbers para alinhamento perfeito
+const LETTER_X = {
+    'A': 0, 'B': 8, 'C': 16, 'D': 24, 'E': 32, 'F': 41, 'G': 49, 'H': 57,
+    'I': 65, 'J': 73, 'K': 82, 'L': 90, 'M': 98, 'N': 106, 'O': 114, 'P': 123,
+    'Q': 131, 'R': 139, 'S': 147, 'T': 155, 'U': 164, 'V': 172, 'W': 180, 'X': 188,
+    'Y': 196, 'Z': 205
+};
 
-const NUMBER_Y = {};
-for (let i = 1; i <= 26; i++) {
-  NUMBER_Y[i] = -(i - 1) * 8;
-}
+const NUMBER_Y = {
+    1: 0, 2: -8, 3: -16, 4: -24, 5: -31, 6: -39, 7: -47, 8: -54,
+    9: -62, 10: -70, 11: -77, 12: -85, 13: -93, 14: -101, 15: -108, 16: -116,
+    17: -124, 18: -131, 19: -139, 20: -147, 21: -154, 22: -162, 23: -170,
+    24: -178, 25: -185, 26: -193
+};
 
 function normalizeCoord(raw) {
     if (!raw) return null;
@@ -170,14 +173,27 @@ function normalizeCoord(raw) {
 
 function cellToLatLngBounds(cellKey) {
     // Converte "A1" em bounds {nw: [lat, lng], se: [lat, lng]}
-    // Usa os mesmos valores do graticule: interval: 8.2, vinterval: 7.7
+    // Usa valores exatos do graticule para alinhamento perfeito
     var letter = cellKey[0];
     var num = parseInt(cellKey.slice(1), 10);
     var x0 = LETTER_X[letter];
     var y0 = NUMBER_Y[num];
-    // Usa os mesmos intervalos do graticule para alinhamento perfeito
-    var x1 = x0 + 8.2;
-    var y1 = y0 - 7.7;
+    
+    // Calcula o próximo quadrante usando os valores exatos do graticule
+    var nextLetter = String.fromCharCode(letter.charCodeAt(0) + 1);
+    var x1 = LETTER_X[nextLetter];
+    if (typeof x1 === 'undefined') {
+        // Se não existe próxima letra, usa o padrão do último intervalo conhecido
+        x1 = x0 + 8; // fallback conservador
+    }
+    
+    var nextNum = num + 1;
+    var y1 = NUMBER_Y[nextNum];
+    if (typeof y1 === 'undefined') {
+        // Se não existe próximo número, usa o padrão do último intervalo conhecido
+        y1 = y0 - 8; // fallback conservador
+    }
+    
     return {
         nw: [y0, x0],  // canto superior esquerdo (norte-oeste)
         se: [y1, x1]   // canto inferior direito (sul-leste)
@@ -234,14 +250,10 @@ FogCanvasLayer.prototype._clearCircle = function(ctx, latlng, radius) {
 };
 
 FogCanvasLayer.prototype._clearCell = function(ctx, key) {
-    var letter = key[0];
-    var num = parseInt(key.slice(1), 10);
-    var x0 = LETTER_X[letter];
-    var y0 = NUMBER_Y[num];
-    var x1 = x0 + 8;
-    var y1 = y0 - 8;
-    var p0 = this._map.latLngToContainerPoint([y0, x0]);
-    var p1 = this._map.latLngToContainerPoint([y1, x1]);
+    // Usa cellToLatLngBounds para garantir alinhamento com graticule
+    var cellBounds = cellToLatLngBounds(key);
+    var p0 = this._map.latLngToContainerPoint(cellBounds.nw);
+    var p1 = this._map.latLngToContainerPoint(cellBounds.se);
     var left = Math.min(p0.x, p1.x);
     var top = Math.min(p0.y, p1.y);
     var w = Math.abs(p1.x - p0.x);
@@ -386,35 +398,6 @@ function onMapClick(e) {
         return;
     }
 
-    // Verifica flag separada para embarcação principal (mais confiável)
-    if (pendingMainVesselPlacement) {
-        // Desativa imediatamente para evitar múltiplos cliques
-        pendingMainVesselPlacement = false;
-        pendingPlacement = null;
-        hidePopup();
-
-        try {
-            var titleEl = document.getElementById("main-vessel-title");
-            var name = titleEl && titleEl.textContent.trim() ? titleEl.textContent.trim() : "Embarcação";
-
-            if (mainVesselShip) {
-                mainVesselShip.setLatLng(e.latlng);
-                if (!map.hasLayer(mainVesselShip)) mainVesselShip.addTo(map);
-            } else {
-                mainVesselShip = mF.createMainVesselFromContext({ latlng: e.latlng }, map);
-            }
-
-            // marca como ativa
-            mainVesselShip._isActive = true;
-
-            // habilita opções quando posicionada
-            enableMainVesselControls(true);
-            updateMainVesselButtons(name, true);
-        } catch (err) {
-            console.error("Erro ao posicionar embarcação:", err);
-        }
-        return;
-    }
 }
 
 map.on('click', onMapClick);
@@ -856,21 +839,53 @@ $(function() {
             titleEl.addEventListener("blur", refresh);
         }
 
+        // Handler dedicado para posicionamento da embarcação (será removido após uso)
+        var mainVesselPlacementHandler = null;
+
         positionBtn.addEventListener("click", function() {
+            // Se já existe um handler ativo, cancela e remove
+            if (mainVesselPlacementHandler) {
+                map.off('click', mainVesselPlacementHandler);
+                mainVesselPlacementHandler = null;
+                hidePopup();
+                positionBtn.textContent = "Posicionar " + getMainVesselName();
+                return;
+            }
 
-			// se já está aguardando clique no mapa, cancela
-			if (pendingMainVesselPlacement) {
-				pendingMainVesselPlacement = false;
-				pendingPlacement = null;
-				hidePopup();
-				return;
-			}
+            // Cria handler dedicado que será executado apenas uma vez
+            mainVesselPlacementHandler = function(e) {
+                // Remove o handler imediatamente para evitar múltiplos cliques
+                map.off('click', mainVesselPlacementHandler);
+                mainVesselPlacementHandler = null;
+                hidePopup();
 
-			// ativa modo de posicionamento usando flag booleana separada
-			pendingMainVesselPlacement = true;
-			pendingPlacement = 'mainShip';
-			showPopup("Clique no mapa para posicionar " + getMainVesselName() + ".");
-		});
+                try {
+                    var name = getMainVesselName();
+
+                    if (mainVesselShip) {
+                        mainVesselShip.setLatLng(e.latlng);
+                        if (!map.hasLayer(mainVesselShip)) mainVesselShip.addTo(map);
+                    } else {
+                        mainVesselShip = mF.createMainVesselFromContext({ latlng: e.latlng }, map);
+                    }
+
+                    // marca como ativa
+                    mainVesselShip._isActive = true;
+
+                    // habilita opções quando posicionada
+                    enableMainVesselControls(true);
+                    updateMainVesselButtons(name, true);
+                    refresh();
+                } catch (err) {
+                    console.error("Erro ao posicionar embarcação:", err);
+                }
+            };
+
+            // Adiciona o handler ao mapa
+            map.on('click', mainVesselPlacementHandler);
+            showPopup("Clique no mapa para posicionar " + getMainVesselName() + ".");
+            positionBtn.textContent = "Cancelar";
+        });
 
 
         if (removeBtn) {
@@ -882,9 +897,11 @@ $(function() {
                 mF.setShipCannonsEnabled(mainVesselShip, false, map);
                 mF.setShipVisionLevel(mainVesselShip, 0, map);
                 enableMainVesselControls(false);
-                // limpa flags de posicionamento pendente
-                pendingMainVesselPlacement = false;
-                pendingPlacement = null;
+                // remove handler de posicionamento se existir
+                if (mainVesselPlacementHandler) {
+                    map.off('click', mainVesselPlacementHandler);
+                    mainVesselPlacementHandler = null;
+                }
                 hidePopup();
                 refresh();
             });
