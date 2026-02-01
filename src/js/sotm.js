@@ -140,11 +140,12 @@ var layer = L.tileLayer(cdnpath + "images/tiles/v3.6/{z}/{x}/{y}.png", {
 // =========================
 // FOG OF WAR (Descoberta) — camada única opaca com "buracos"
 // =========================
-map.createPane('fogPane');
-map.getPane('fogPane').style.zIndex = 1000;
+//map.createPane('fogPane');
+//map.getPane('fogPane').style.zIndex = 1000;
 
 // Tabelas exatas do graticule (L.SimpleGraticule-sot.js)
 // Usa os valores exatos do array letters e numbers para alinhamento perfeito
+/*
 const LETTER_X = {
     'A': 0, 'B': 8, 'C': 16, 'D': 24, 'E': 32, 'F': 41, 'G': 49, 'H': 57,
     'I': 65, 'J': 73, 'K': 82, 'L': 90, 'M': 98, 'N': 106, 'O': 114, 'P': 123,
@@ -362,11 +363,11 @@ FogCanvasLayer.prototype.toggleCell = function(rawCoord, discover) {
     this._redraw();
 };
 
-var fog = new FogCanvasLayer(map).addTo(map);
-window.fogClearAt = function(latlng, radius) { fog.revealAt(latlng, radius); };
-window.fogToggleCell = function(rawCoord, discover) { fog.toggleCell(rawCoord, !!discover); };
+//var fog = new FogCanvasLayer(map).addTo(map);
+//window.fogClearAt = function(latlng, radius) { fog.revealAt(latlng, radius); };
+//window.fogToggleCell = function(rawCoord, discover) { fog.toggleCell(rawCoord, !!discover); };
 
-
+*/
 
 
 function onMapClick(e) {
@@ -994,20 +995,20 @@ $(function() {
     // =========================
     // DESCOBERTA (FOG)
     // =========================
-    (function setupDiscoveryPanel() {
-        var input = document.getElementById("discovery-coord");
-        var discoverBtn = document.getElementById("discovery-btn");
-        var coverBtn = document.getElementById("cover-btn");
-        if (!input || !discoverBtn || !coverBtn) return;
+    //(function setupDiscoveryPanel() {
+     //   var input = document.getElementById("discovery-coord");
+     //   var discoverBtn = document.getElementById("discovery-btn");
+       // var coverBtn = document.getElementById("cover-btn");
+     //   if (!input || !discoverBtn || !coverBtn) return;
 
-        discoverBtn.addEventListener("click", function() {
-            if (typeof window.fogToggleCell !== "function") return;
-            window.fogToggleCell(input.value, true);
-        });
-        coverBtn.addEventListener("click", function() {
-            if (typeof window.fogToggleCell !== "function") return;
-            window.fogToggleCell(input.value, false);
-        });
+      //  discoverBtn.addEventListener("click", function() {
+      //      if (typeof window.fogToggleCell !== "function") return;
+      //      window.fogToggleCell(input.value, true);
+      //  });
+      //  coverBtn.addEventListener("click", function() {
+      //      if (typeof window.fogToggleCell !== "function") return;
+      //      window.fogToggleCell(input.value, false);
+      //  });
     })();
 
 
@@ -1115,10 +1116,6 @@ $(function() {
     });
 
     readXstring();
-
-
-    
-});
 
 
 //expose externally:
