@@ -396,7 +396,24 @@ function onMapClick(e) {
     console.log("You clicked the map at " + e.latlng);
 
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/390b337b-77f4-4ae2-9855-3a1dbf4dda2c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-1',hypothesisId:'H4',location:'sotm.js:onMapClick:entry',message:'Map click',data:{pendingPlacement:pendingPlacement,latlng:e&&e.latlng?{lat:e.latlng.lat,lng:e.latlng.lng}:null},timestamp:Date.now()})}).catch(()=>{});
+    if (location.hostname === "localhost") {
+  fetch('http://127.0.0.1:7242/ingest/390b337b-77f4-4ae2-9855-3a1dbf4dda2c', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      sessionId: 'debug-session',
+      runId: 'pre-fix-1',
+      hypothesisId: 'H4',
+      location: 'sotm.js:onMapClick:entry',
+      message: 'Map click',
+      data: {
+        pendingPlacement,
+        latlng: e && e.latlng ? { lat: e.latlng.lat, lng: e.latlng.lng } : null
+      },
+      timestamp: Date.now()
+    })
+  }).catch(() => {});
+}
     // #endregion
 
     if (pendingPlacement === 'marker') {
@@ -721,7 +738,32 @@ var options = {interval: 8.2,
      {start: 3, end: 6, interval: 5.85} 
  ]*/};
 L.simpleGraticule(options).addTo(map); 
+// =========================
+// OVERLAYS de ilhas customizadas (por cima do tileset)
+// =========================
+map.createPane('customIslandsPane');
+map.getPane('customIslandsPane').style.zIndex = 450; // acima do tile (normalmente ~200), abaixo de labels/markers
+map.getPane('customIslandsPane').style.pointerEvents = 'none';
 
+// Helper: cria bounds quadrado baseado em centro e "halfSize" em unidades do mapa (CRS.Simple)
+function boundsFromCenter(centerLatLng, halfSize) {
+  const lat = centerLatLng[0];
+  const lng = centerLatLng[1];
+  return L.latLngBounds([lat - halfSize, lng - halfSize], [lat + halfSize, lng + halfSize]);
+}
+
+// ====== Substituição visual: Plunder Outpost (tile) -> Ilha da Pegada (overlay) ======
+// Centro exato vem do island_data (Plunder Outpost loc)
+const plunderOutpostCenter = [-134.88188667929433, 82.4887459312965];
+
+// Ajuste fino: comece com 6, depois aumente/diminua até encaixar no desenho do tile
+const PEGADA_HALF_SIZE = 7;
+
+L.imageOverlay(
+  'images/island_images/plunderOutpost_v2.png',
+  boundsFromCenter(plunderOutpostCenter, PEGADA_HALF_SIZE),
+  { pane: 'customIslandsPane', opacity: 1 }
+).addTo(map);
 
 map.on('zoomend', function() {
     adjustAlphaNum();
