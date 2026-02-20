@@ -509,7 +509,7 @@ var islands = [{
         "loc": [-134.88188667929433, 82.4887459312965],
         "title": "Plunder Outpost",
 		"coords" : "J 18",
-		"img" : "plunderOutpost.jpg",
+		"img": "plunderOutpost_v2.jpg",
         radius: 2,
         outpost: true
     },
