@@ -23,6 +23,28 @@ var beacons = beacon_data.beacons;
 var cargoruns = cargorun_data.cargoruns;
 var places = places_data.places;
 
+// =========================
+// Links da Wiki (Fandom)
+// =========================
+const FANDOM_WIKI_BASE = 'https://pacto-das-mares-rpg.fandom.com/pt-br/wiki/';
+
+function buildFandomWikiUrl(pageTitle) {
+  // Ex: "Ilha da Pegada" -> "Ilha_da_Pegada"
+  const pageName = String(pageTitle || '')
+    .trim()
+    .replace(/\s+/g, '_');
+
+  return FANDOM_WIKI_BASE + encodeURIComponent(pageName);
+}
+
+function stopMapInteraction(e) {
+  // Impede que o clique no texto da ilha dispare cliques do mapa (posicionar embarcação, etc.)
+  if (e && e.originalEvent) {
+    L.DomEvent.stopPropagation(e.originalEvent);
+    L.DomEvent.preventDefault(e.originalEvent);
+  }
+}
+
 function compare(a, b){
     const nameA = a.title.replace(/the /gi, '').toUpperCase();
     const nameB = b.title.replace(/the /gi, '').toUpperCase();
@@ -480,15 +502,27 @@ for(var i in islands) {
 
     pList.addPlaceToList("island", islandName, classes, islands[i]);
 	
-    var textLoc = modifyLoc(islands[i].loc, (cRad + (cRad * 0.1)), (0));
+	var textLoc = modifyLoc(islands[i].loc, (cRad + (cRad * 0.1)), (0));
+	const islandWikiUrl = buildFandomWikiUrl(islands[i].title);
+
 	var islandMarker = new L.Marker(textLoc, {
-		icon: new L.DivIcon({
-			className: 'title-location',
-            iconAnchor:   [0, 0],
-            iconSize: null,
-			html: '<span class="my-div-span" data-anchor-x="0">'+islands[i].title+'</span>'
-		})
-    }).addTo(islandsLayer);
+	  icon: new L.DivIcon({
+		className: 'title-location',
+		iconAnchor: [0, 0],
+		iconSize: null,
+		// Mantém a classe antiga pra não quebrar seu hover atual
+		html: '<span class="my-div-span island-link" data-anchor-x="0" title="Abrir wiki">'
+		  + islands[i].title +
+		  '</span>'
+	  })
+	}).addTo(islandsLayer);
+
+	// Clique no NOME abre a wiki, sem vazar pro mapa
+	islandMarker.on('mousedown', stopMapInteraction);
+	islandMarker.on('click', function (e) {
+	  stopMapInteraction(e);
+	  window.open(islandWikiUrl, '_blank', 'noopener,noreferrer');
+	});
 
     markersLayer.addLayer(circle);
     island_markers[i] = circle;
