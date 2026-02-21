@@ -1,6 +1,6 @@
 
 
-var dataCacheName = 'sotm-v2.8';
+var dataCacheName = 'sotm-v2.9';
 
 
 self.addEventListener('install', event => {
