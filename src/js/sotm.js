@@ -9,6 +9,7 @@ import * as mF from './modules/markers.js';
 import * as pList from './modules/place_list.js';
 import * as routes from './modules/routes.js';
 
+var $ = (typeof window !== 'undefined' && window.jQuery) ? window.jQuery : undefined;
 
 var layerArray = [];
 
