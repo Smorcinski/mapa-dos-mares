@@ -23,6 +23,28 @@ var beacons = beacon_data.beacons;
 var cargoruns = cargorun_data.cargoruns;
 var places = places_data.places;
 
+// =========================
+// Links da Wiki (Fandom)
+// =========================
+const FANDOM_WIKI_BASE = 'https://pacto-das-mares-rpg.fandom.com/pt-br/wiki/';
+
+function buildFandomWikiUrl(pageTitle) {
+  // Ex: "Ilha da Pegada" -> "Ilha_da_Pegada"
+  const pageName = String(pageTitle || '')
+    .trim()
+    .replace(/\s+/g, '_');
+
+  return FANDOM_WIKI_BASE + encodeURIComponent(pageName);
+}
+
+function stopMapInteraction(e) {
+  // Impede que o clique no texto da ilha dispare cliques do mapa (posicionar embarcação, etc.)
+  if (e && e.originalEvent) {
+    L.DomEvent.stopPropagation(e.originalEvent);
+    L.DomEvent.preventDefault(e.originalEvent);
+  }
+}
+
 function compare(a, b){
     const nameA = a.title.replace(/the /gi, '').toUpperCase();
     const nameB = b.title.replace(/the /gi, '').toUpperCase();
@@ -374,7 +396,24 @@ function onMapClick(e) {
     console.log("You clicked the map at " + e.latlng);
 
     // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/390b337b-77f4-4ae2-9855-3a1dbf4dda2c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'pre-fix-1',hypothesisId:'H4',location:'sotm.js:onMapClick:entry',message:'Map click',data:{pendingPlacement:pendingPlacement,latlng:e&&e.latlng?{lat:e.latlng.lat,lng:e.latlng.lng}:null},timestamp:Date.now()})}).catch(()=>{});
+    if (location.hostname === "localhost") {
+  fetch('http://127.0.0.1:7242/ingest/390b337b-77f4-4ae2-9855-3a1dbf4dda2c', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      sessionId: 'debug-session',
+      runId: 'pre-fix-1',
+      hypothesisId: 'H4',
+      location: 'sotm.js:onMapClick:entry',
+      message: 'Map click',
+      data: {
+        pendingPlacement,
+        latlng: e && e.latlng ? { lat: e.latlng.lat, lng: e.latlng.lng } : null
+      },
+      timestamp: Date.now()
+    })
+  }).catch(() => {});
+}
     // #endregion
 
     if (pendingPlacement === 'marker') {
@@ -480,15 +519,27 @@ for(var i in islands) {
 
     pList.addPlaceToList("island", islandName, classes, islands[i]);
 	
-    var textLoc = modifyLoc(islands[i].loc, (cRad + (cRad * 0.1)), (0));
+	var textLoc = modifyLoc(islands[i].loc, (cRad + (cRad * 0.1)), (0));
+	const islandWikiUrl = buildFandomWikiUrl(islands[i].title);
+
 	var islandMarker = new L.Marker(textLoc, {
-		icon: new L.DivIcon({
-			className: 'title-location',
-            iconAnchor:   [0, 0],
-            iconSize: null,
-			html: '<span class="my-div-span" data-anchor-x="0">'+islands[i].title+'</span>'
-		})
-    }).addTo(islandsLayer);
+	  icon: new L.DivIcon({
+		className: 'title-location',
+		iconAnchor: [0, 0],
+		iconSize: null,
+		// Mantém a classe antiga pra não quebrar seu hover atual
+		html: '<span class="my-div-span island-link" data-anchor-x="0" title="Abrir wiki">'
+		  + islands[i].title +
+		  '</span>'
+	  })
+	}).addTo(islandsLayer);
+
+	// Clique no NOME abre a wiki, sem vazar pro mapa
+	islandMarker.on('mousedown', stopMapInteraction);
+	islandMarker.on('click', function (e) {
+	  stopMapInteraction(e);
+	  window.open(islandWikiUrl, '_blank', 'noopener,noreferrer');
+	});
 
     markersLayer.addLayer(circle);
     island_markers[i] = circle;
@@ -522,43 +573,53 @@ for(var i in islands) {
 
 
 var lastZoomApplied = null;
-map.on('zoomend', function() {
-    if (map.getZoom() <3){
-        map.removeLayer(islandsLayer);
-    }
-    else {
-		map.addLayer(islandsLayer);
-	}
-	var tooltip = $('.title-location');
-	switch (map.getZoom()) {
-		case 5:
-            tooltip.css('font-size', 24);
-			if(lastZoomApplied != map.getZoom()){
-				//adjustIslandsAnchorPointOnZoom(0.18);
-			}
-			lastZoomApplied = map.getZoom();
-            break;
-        case 6:
-            tooltip.css('font-size', 33);
-			if(lastZoomApplied != map.getZoom()){
-				//adjustIslandsAnchorPointOnZoom(0.41);
-			}
-			lastZoomApplied = map.getZoom();
-            break;
-        case 7:
-            tooltip.css('font-size', 63);
-			if(lastZoomApplied != map.getZoom()){
-				//adjustIslandsAnchorPointOnZoom(1.73);
-			}
-			lastZoomApplied = map.getZoom();
-            break;
-        default:
-            tooltip.css('font-size', 14);
-			if(lastZoomApplied != map.getZoom()){
-				//adjustIslandsAnchorPointOnZoom(0);
-			}
-			lastZoomApplied = 4;
-    }
+
+function setTitleLocationFontSize(px) {
+  var els = document.querySelectorAll('.title-location');
+  for (var i = 0; i < els.length; i++) {
+    els[i].style.fontSize = px + 'px';
+  }
+}
+
+map.on('zoomend', function () {
+  if (map.getZoom() < 3) {
+    map.removeLayer(islandsLayer);
+  } else {
+    map.addLayer(islandsLayer);
+  }
+
+  switch (map.getZoom()) {
+    case 5:
+      setTitleLocationFontSize(24);
+      if (lastZoomApplied != map.getZoom()) {
+        //adjustIslandsAnchorPointOnZoom(0.18);
+      }
+      lastZoomApplied = map.getZoom();
+      break;
+
+    case 6:
+      setTitleLocationFontSize(33);
+      if (lastZoomApplied != map.getZoom()) {
+        //adjustIslandsAnchorPointOnZoom(0.41);
+      }
+      lastZoomApplied = map.getZoom();
+      break;
+
+    case 7:
+      setTitleLocationFontSize(63);
+      if (lastZoomApplied != map.getZoom()) {
+        //adjustIslandsAnchorPointOnZoom(1.73);
+      }
+      lastZoomApplied = map.getZoom();
+      break;
+
+    default:
+      setTitleLocationFontSize(14);
+      if (lastZoomApplied != map.getZoom()) {
+        //adjustIslandsAnchorPointOnZoom(0);
+      }
+      lastZoomApplied = 4;
+  }
 });
 
 
@@ -687,6 +748,32 @@ var options = {interval: 8.2,
      {start: 3, end: 6, interval: 5.85} 
  ]*/};
 L.simpleGraticule(options).addTo(map); 
+// =========================
+// OVERLAYS de ilhas customizadas (por cima do tileset)
+// =========================
+map.createPane('customIslandsPane');
+map.getPane('customIslandsPane').style.zIndex = 450; // acima do tile (normalmente ~200), abaixo de labels/markers
+map.getPane('customIslandsPane').style.pointerEvents = 'none';
+
+// Helper: cria bounds quadrado baseado em centro e "halfSize" em unidades do mapa (CRS.Simple)
+function boundsFromCenter(centerLatLng, halfSize) {
+  const lat = centerLatLng[0];
+  const lng = centerLatLng[1];
+  return L.latLngBounds([lat - halfSize, lng - halfSize], [lat + halfSize, lng + halfSize]);
+}
+
+// ====== Substituição visual: Plunder Outpost (tile) -> Ilha da Pegada (overlay) ======
+// Centro exato vem do island_data (Plunder Outpost loc)
+const plunderOutpostCenter = [-134.88188667929433, 82.4887459312965];
+
+// Ajuste fino: comece com 6, depois aumente/diminua até encaixar no desenho do tile
+const PEGADA_HALF_SIZE = 4;
+
+L.imageOverlay(
+  'images/island_images/plunderOutpost_v2.png',
+  boundsFromCenter(plunderOutpostCenter, PEGADA_HALF_SIZE),
+  { pane: 'customIslandsPane', opacity: 1 }
+).addTo(map);
 
 
 map.on('zoomend', function() {
