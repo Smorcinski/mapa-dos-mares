@@ -220,13 +220,8 @@
         <!-- <script src="js/vendor/leaflet-search.min.js"></script> -->
         <script src="js/vendor/L.SimpleGraticule-sot.js"></script>
         <script src="js/vendor/leaflet-hash.js"></script>
-		<script src="js/vendor/html2canvas.min.js"></script>
         <script src="js/vendor/jquery-3.3.1.min.js"></script>
-		<script>
-		  // garante que $ e jQuery apontam pro jQuery antes do sotm.js rodar
-		  window.jQuery = window.jQuery || window.$;
-		  window.$ = window.jQuery;
-		</script>
+        <script src="js/vendor/html2canvas.min.js"></script>
         <script src="js/sotm.js?v=<?= CACHE_BUSTER ?>"></script> <!-- ?v=<?= CACHE_BUSTER ?> -->
 
         

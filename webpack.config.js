@@ -1,11 +1,18 @@
+
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+
 module.exports = {
-  mode: "production",
-  devtool: false, // evita gerar sourcemap (e aquele 404 no GitHub Pages)
-
+  devtool: "source-map",
   output: {
-    filename: "[name].js"
-    // se você não gerar sourcemap, não precisa do sourceMapFilename
+    filename: '[name].js',
+    sourceMapFilename: 'maps/[name].js.map'
   },
+  module: {
 
-  module: {}
+  },
+  plugins: [
+    new UglifyJsPlugin({
+      sourceMap: true
+    })
+  ]
 };
