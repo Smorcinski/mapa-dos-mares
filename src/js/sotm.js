@@ -159,47 +159,6 @@ var layer = L.tileLayer(cdnpath + "images/tiles/v3.6/{z}/{x}/{y}.png", {
     tms: !1
 }).addTo(map);
 
-// === TILE LOGGER (DEV) ===
-// Registra todo tile carregado (z/x/y) para você espelhar depois
-(function setupTileLogger(tileLayer) {
-  var KEY = 'mdm_tile_log_v1';
-  var saved = {};
-  try {
-    saved = JSON.parse(localStorage.getItem(KEY) || '{}') || {};
-  } catch (e) {
-    saved = {};
-  }
-
-  function mark(coords) {
-    var z = String(coords.z);
-    var x = String(coords.x);
-    var y = String(coords.y);
-
-    if (!saved[z]) saved[z] = {};
-    if (!saved[z][x]) saved[z][x] = {};
-    saved[z][x][y] = 1;
-
-    try {
-      localStorage.setItem(KEY, JSON.stringify(saved));
-    } catch (e) {
-      // se estourar quota, não quebra o mapa
-    }
-  }
-
-  tileLayer.on('tileload', function (e) {
-    if (e && e.coords) mark(e.coords);
-  });
-
-  // Atalho pra exportar o log no console
-  window.__exportTileLog = function () {
-    var data = localStorage.getItem(KEY) || '{}';
-    console.log('TILE_LOG_JSON:', data);
-    return data;
-  };
-
-  console.log('[TileLogger] ativo. Navegue pelo mapa e depois rode __exportTileLog() no console.');
-})(layer);
-
 // =========================
 // FOG OF WAR (Descoberta) — camada única opaca com "buracos"
 // =========================
@@ -805,6 +764,7 @@ L.imageOverlay(
   boundsFromCenter(plunderOutpostCenter, PEGADA_HALF_SIZE),
   { pane: 'customIslandsPane', opacity: 1 }
 ).addTo(map);
+
 
 map.on('zoomend', function() {
     adjustAlphaNum();
