@@ -768,7 +768,7 @@ function boundsFromCenter(centerLatLng, halfSize) {
 const plunderOutpostCenter = [-134.88188667929433, 82.4887459312965];
 
 // Ajuste fino: comece com 6, depois aumente/diminua até encaixar no desenho do tile
-const PEGADA_HALF_SIZE = 4;
+const PEGADA_HALF_SIZE = 3;
 
 L.imageOverlay(
   'images/island_images/plunderOutpost_v2.png',
