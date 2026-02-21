@@ -103,18 +103,20 @@
 
         </section>
 
-        <script src="js/vendor/leaflet.js"></script>
-        <script src="js/vendor/leaflet-search.min.js"></script>
-        <script src="js/vendor/L.SimpleGraticule-sot.js"></script>
-        <script src="js/vendor/leaflet-hash.js"></script>
-        <script src="js/vendor/jquery-3.3.1.min.js"></script>
+        <!-- Leaflet -->
+		<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+		<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-		<script>
-		  // garante que $ e jQuery apontam pro jQuery antes do sotm.js rodar
-		  window.jQuery = window.jQuery || window.$;
-		  window.$ = window.jQuery;
-		</script>
+		<!-- jQuery (se seu sotm.js usa $) -->
+		<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+		<script>window.$ = window.jQuery;</script>
 
+		<!-- Plugins (se seu projeto usa) -->
+		<script src="https://unpkg.com/leaflet-hash@0.2.1/leaflet-hash.js"></script>
+		<link rel="stylesheet" href="https://unpkg.com/leaflet-search@2.9.9/dist/leaflet-search.min.css">
+		<script src="https://unpkg.com/leaflet-search@2.9.9/dist/leaflet-search.min.js"></script>
+
+		<!-- Seu bundle -->
 		<script src="js/sotm.js?v=1234567812"></script>
 
         
