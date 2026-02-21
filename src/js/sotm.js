@@ -573,43 +573,53 @@ for(var i in islands) {
 
 
 var lastZoomApplied = null;
-map.on('zoomend', function() {
-    if (map.getZoom() <3){
-        map.removeLayer(islandsLayer);
-    }
-    else {
-		map.addLayer(islandsLayer);
-	}
-	var tooltip = $('.title-location');
-	switch (map.getZoom()) {
-		case 5:
-            tooltip.css('font-size', 24);
-			if(lastZoomApplied != map.getZoom()){
-				//adjustIslandsAnchorPointOnZoom(0.18);
-			}
-			lastZoomApplied = map.getZoom();
-            break;
-        case 6:
-            tooltip.css('font-size', 33);
-			if(lastZoomApplied != map.getZoom()){
-				//adjustIslandsAnchorPointOnZoom(0.41);
-			}
-			lastZoomApplied = map.getZoom();
-            break;
-        case 7:
-            tooltip.css('font-size', 63);
-			if(lastZoomApplied != map.getZoom()){
-				//adjustIslandsAnchorPointOnZoom(1.73);
-			}
-			lastZoomApplied = map.getZoom();
-            break;
-        default:
-            tooltip.css('font-size', 14);
-			if(lastZoomApplied != map.getZoom()){
-				//adjustIslandsAnchorPointOnZoom(0);
-			}
-			lastZoomApplied = 4;
-    }
+
+function setTitleLocationFontSize(px) {
+  var els = document.querySelectorAll('.title-location');
+  for (var i = 0; i < els.length; i++) {
+    els[i].style.fontSize = px + 'px';
+  }
+}
+
+map.on('zoomend', function () {
+  if (map.getZoom() < 3) {
+    map.removeLayer(islandsLayer);
+  } else {
+    map.addLayer(islandsLayer);
+  }
+
+  switch (map.getZoom()) {
+    case 5:
+      setTitleLocationFontSize(24);
+      if (lastZoomApplied != map.getZoom()) {
+        //adjustIslandsAnchorPointOnZoom(0.18);
+      }
+      lastZoomApplied = map.getZoom();
+      break;
+
+    case 6:
+      setTitleLocationFontSize(33);
+      if (lastZoomApplied != map.getZoom()) {
+        //adjustIslandsAnchorPointOnZoom(0.41);
+      }
+      lastZoomApplied = map.getZoom();
+      break;
+
+    case 7:
+      setTitleLocationFontSize(63);
+      if (lastZoomApplied != map.getZoom()) {
+        //adjustIslandsAnchorPointOnZoom(1.73);
+      }
+      lastZoomApplied = map.getZoom();
+      break;
+
+    default:
+      setTitleLocationFontSize(14);
+      if (lastZoomApplied != map.getZoom()) {
+        //adjustIslandsAnchorPointOnZoom(0);
+      }
+      lastZoomApplied = 4;
+  }
 });
 
 
