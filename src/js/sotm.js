@@ -659,6 +659,9 @@ var toggleMarkers = function(theType, onoff) {
 
 };
 
+// ===== Anchor jQuery ($) inside the webpack module =====
+var $ = (typeof window !== 'undefined' && window.jQuery) ? window.jQuery : window.$;
+
 var toggleLayer = function(theType, onoff) {
     var theLayer = getLayer(theType);
     console.log(theType);
