@@ -1,6 +1,6 @@
 var islands = [{
 		"loc": [-41.819753270587555, 62.927539082707604],
-        "title": "Enseada Solitária",
+        "title": "Tierra Sola",
 		"coords" : "H 6",
 		"img" : "loneCove.jpg",
         radius: 3,
@@ -9,7 +9,7 @@ var islands = [{
     },
     {
         "loc": [-69.94175507751075, 50.54955884969927],
-        "title": "Enseada do Canhão",
+        "title": "Encosta do Canhão",
 		"coords" : "G 10",
 		"img" : "cannonCove.jpg",
         radius: 4,
@@ -42,7 +42,7 @@ var islands = [{
     },
     {
         "loc": [-21.065393452707312, 42.86583042922642],
-        "title": "Baía do Contrabandista",
+        "title": "Baía do cretino",
 		"coords" : "F 3",
 		"img" : "smugglersBay.jpg",
         radius: 4,
@@ -122,7 +122,7 @@ var islands = [{
     },
     {
         "loc": [-48.25860180284481, 43.931357643687285],
-        "title": "Sanctuary Outpost",
+        "title": "O Santuário",
 		"coords" : "F 7",
 		"img" : "sanctuaryOutpost.jpg",
         radius: 3,
@@ -320,7 +320,7 @@ var islands = [{
     },
     {
         "loc": [-66.31539345270731, 15.993498563600905],
-        "title": "Crescent Isle",
+        "title": "Isla Crescente",
 		"coords" : "B 9",
 		"img" : "crescentIsle.jpg",
         radius: 3,
@@ -344,7 +344,7 @@ var islands = [{
     },
     {
         "loc": [-81.6942164761939, 60.23384927983136],
-        "title": "Twin Groves",
+        "title": "Ilhas Gemeas",
 		"coords" : "H 11",
         radius: 2,
         chickens: true
@@ -368,7 +368,7 @@ var islands = [{
     },
     {
         "loc": [-97.13434807797746, 16.305895692771806],
-        "title": "Mermaid's Hideaway",
+        "title": "Rabo da Sereia",
 		"coords" : "B 13",
 		"img" : "mermaidsHideaway.jpg",
         radius: 3,
@@ -377,7 +377,7 @@ var islands = [{
     },
     {
         "loc": [-105.13603701643558, 36.36971243938428],
-        "title": "Sailor's Knot Stronghold",
+        "title": "Forte da Marinha Holandesa",
 		"coords" : "E 14",
         radius: 2,
         isFortress: true
@@ -507,7 +507,7 @@ var islands = [{
     },
     {
         "loc": [-134.88188667929433, 82.4887459312965],
-        "title": "Plunder Outpost",
+        "title": "Ilha da Pegada",
 		"coords" : "J 18",
 		"img": "plunderOutpost_v2.jpg",
         radius: 2,
@@ -529,7 +529,7 @@ var islands = [{
     },
     {
         "loc": [-130.13078690541462, 117.3608449739159],
-        "title": "The Crow's Nest Fortress",
+        "title": "Fuerte de Nuestra Señora de la Corona del Mar",
 		"coords" : "O 17",
 		"img" : "theCrowsNestFortress.jpg",
         radius: 2,
