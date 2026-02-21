@@ -10,7 +10,11 @@ import * as pList from './modules/place_list.js';
 import * as routes from './modules/routes.js';
 
 var $ = (typeof window !== 'undefined' && window.jQuery) ? window.jQuery : undefined;
-
+// ===== Ensure jQuery =====
+var $ = window.jQuery || window.$;
+if (typeof $ !== "function") {
+  console.error("[Mapa dos Mares] jQuery não está disponível como função. Verifique a ordem dos scripts no HTML.");
+}
 var layerArray = [];
 
 
